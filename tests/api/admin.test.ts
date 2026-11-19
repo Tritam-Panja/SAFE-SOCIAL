@@ -198,7 +198,7 @@ describe('Admin Dashboard, Reporting & Notifications Suite', () => {
   it('Admin User Management: Lists users and allows updating active status', async () => {
     // 1. Fetch user list
     const usersRes = await (
-      await fetch(`${baseUrl}/admin/users?role=CHILD&limit=50`, {
+      await fetch(`${baseUrl}/admin/users?role=CHILD&limit=100`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       })
     ).json();

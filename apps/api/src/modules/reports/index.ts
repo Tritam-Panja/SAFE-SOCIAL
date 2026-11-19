@@ -5,6 +5,8 @@ import { validateRequest } from '../../middleware/validate.js';
 import { createReportSchema, resolveReportSchema, CreateReportInput, ResolveReportInput } from '@fizzy/validation';
 import { UserRole, ReportStatus, NotificationType } from '../../generated/prisma-client/index.js';
 import { FeedService } from '../feed/feed.service.js';
+import { RealtimeServer } from '../realtime/index.js';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const reportsRouter = Router();
 
@@ -62,6 +64,15 @@ reportsRouter.post(
           entityId: report.id,
           details: { contentId, reason },
         },
+      });
+
+      // 4. Emit Real-time Notification to Admins
+      const realtime = RealtimeServer.getInstance();
+      realtime.emitToAdmins(RealtimeEvent.REPORT_CREATED, {
+        reportId: report.id,
+        contentId: report.contentId,
+        reporterId: user.id,
+        reason: report.reason,
       });
 
       res.status(201).json({

@@ -5,6 +5,8 @@ import { validateRequest } from '../../middleware/validate.js';
 import { createReelInputSchema, CreateReelInput } from '@fizzy/validation';
 import { UserRole, ContentStatus, ContentType } from '../../generated/prisma-client/index.js';
 import { FeedService } from '../feed/feed.service.js';
+import { RealtimeServer } from '../realtime/index.js';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const reelsRouter = Router();
 
@@ -143,6 +145,20 @@ reelsRouter.post(
         });
 
         return reel;
+      });
+
+      // Emit Real-time Events
+      const realtime = RealtimeServer.getInstance();
+      realtime.emitToAdmins(RealtimeEvent.CONTENT_SUBMITTED, {
+        contentId: newReel.id,
+        type: newReel.type,
+        authorId: user.id,
+        authorUsername: user.username,
+        submittedAt: new Date().toISOString(),
+      });
+      realtime.emitToAdmins(RealtimeEvent.MODERATION_QUEUE_UPDATED, {
+        action: 'ITEM_ADDED',
+        contentId: newReel.id,
       });
 
       res.status(201).json({

@@ -1,6 +1,8 @@
 import { ContentStatus, ReviewDecision, AgeGroup, Prisma } from '../../generated/prisma-client/index.js';
 import { prisma } from '../../prisma.js';
 import { getStorageProvider } from '../media/storage.factory.js';
+import { RealtimeServer } from '../realtime/index.js';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export interface ModerationTransitionResult {
   contentId: string;
@@ -303,7 +305,7 @@ export class ModerationService {
         notifMessage = reason || 'Please revise your submission and try sharing again.';
       }
 
-      await tx.notification.create({
+      const notif = await tx.notification.create({
         data: {
           userId: content.authorId,
           type: decision === ReviewDecision.APPROVE ? 'CONTENT_APPROVED' : 'CONTENT_REJECTED',
@@ -311,6 +313,62 @@ export class ModerationService {
           message: notifMessage,
           referenceId: contentId,
         },
+      });
+
+      // Post-transaction real-time event dispatch
+      const realtime = RealtimeServer.getInstance();
+
+      // 1. Notify Author
+      if (decision === ReviewDecision.APPROVE) {
+        realtime.emitToUser(content.authorId, RealtimeEvent.CONTENT_APPROVED, {
+          contentId,
+          type: content.type,
+          title: content.title || 'Untitled',
+          approvedAudiences: approvedAudiences || [],
+        });
+        realtime.emitToUser(content.authorId, RealtimeEvent.NOTIFICATION_CREATED, {
+          id: notif.id,
+          userId: content.authorId,
+          type: notif.type,
+          title: notif.title,
+          message: notif.message,
+          createdAt: notif.createdAt.toISOString(),
+        });
+
+        // 2. Broadcast feed update to approved age group rooms
+        if (approvedAudiences && approvedAudiences.length > 0) {
+          realtime.emitToAgeGroups(approvedAudiences, RealtimeEvent.FEED_UPDATED, {
+            type: content.type,
+            targetAgeGroups: approvedAudiences,
+            action: 'NEW_CONTENT',
+          });
+        }
+      } else if (decision === ReviewDecision.REJECT) {
+        realtime.emitToUser(content.authorId, RealtimeEvent.CONTENT_REJECTED, {
+          contentId,
+          type: content.type,
+          reason: reason || 'Community guidelines violation',
+        });
+        realtime.emitToUser(content.authorId, RealtimeEvent.NOTIFICATION_CREATED, {
+          id: notif.id,
+          userId: content.authorId,
+          type: notif.type,
+          title: notif.title,
+          message: notif.message,
+          createdAt: notif.createdAt.toISOString(),
+        });
+      } else if (decision === ReviewDecision.REQUEST_CHANGES) {
+        realtime.emitToUser(content.authorId, RealtimeEvent.CONTENT_CHANGES_REQUESTED, {
+          contentId,
+          type: content.type,
+          reason: reason || 'Changes requested',
+        });
+      }
+
+      // 3. Notify Admins moderation queue updated
+      realtime.emitToAdmins(RealtimeEvent.MODERATION_QUEUE_UPDATED, {
+        action: 'ITEM_REVIEWED',
+        contentId,
       });
 
       return {

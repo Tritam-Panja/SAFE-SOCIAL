@@ -7,6 +7,7 @@ describe('Private Media & Quarantine Ingestion Pipeline', () => {
   const app = createApp();
   let server: http.Server;
   const PORT = 4030;
+  process.env.TEST_PORT = String(PORT);
   const baseUrl = `http://localhost:${PORT}/api/v1`;
 
   let childToken: string;

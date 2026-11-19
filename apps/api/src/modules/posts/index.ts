@@ -4,6 +4,8 @@ import { requireAuth, requireRole } from '../../middleware/auth.js';
 import { validateRequest } from '../../middleware/validate.js';
 import { createPostInputSchema, CreatePostInput } from '@fizzy/validation';
 import { UserRole, ContentStatus, ContentType } from '../../generated/prisma-client/index.js';
+import { RealtimeServer } from '../realtime/index.js';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const postsRouter = Router();
 
@@ -88,6 +90,20 @@ postsRouter.post(
         });
 
         return post;
+      });
+
+      // Emit Real-time Events
+      const realtime = RealtimeServer.getInstance();
+      realtime.emitToAdmins(RealtimeEvent.CONTENT_SUBMITTED, {
+        contentId: newPost.id,
+        type: newPost.type,
+        authorId: user.id,
+        authorUsername: user.username,
+        submittedAt: new Date().toISOString(),
+      });
+      realtime.emitToAdmins(RealtimeEvent.MODERATION_QUEUE_UPDATED, {
+        action: 'ITEM_ADDED',
+        contentId: newPost.id,
       });
 
       res.status(201).json({

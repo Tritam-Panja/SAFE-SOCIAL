@@ -14,12 +14,16 @@ import {
   Users,
   Layers,
   Settings,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useRealtime } from '../context/RealtimeContext';
 import { UserRole } from '@fizzy/shared-types';
 
 export const AppLayout: React.FC = () => {
   const { user, role, ageGroup, isAuthenticated, logout } = useAuth();
+  const { isConnected } = useRealtime();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -41,6 +45,24 @@ export const AppLayout: React.FC = () => {
           <span className="text-xs bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full ml-2">
             Safe Social
           </span>
+          {isAuthenticated && (
+            <span
+              title={isConnected ? 'Real-time connected' : 'Connecting real-time...'}
+              className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                isConnected ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+              }`}
+            >
+              {isConnected ? (
+                <>
+                  <Wifi className="w-3 h-3 text-emerald-500 animate-pulse" /> Live
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3 h-3 text-amber-500" /> Offline
+                </>
+              )}
+            </span>
+          )}
         </div>
 
         {/* User Session Status */}

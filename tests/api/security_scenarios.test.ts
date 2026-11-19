@@ -7,6 +7,7 @@ describe('Prompt 14: Comprehensive Security & Scenario Verification Suite', () =
   const app = createApp();
   let server: http.Server;
   const PORT = 4099;
+  process.env.TEST_PORT = String(PORT);
   const baseUrl = `http://localhost:${PORT}/api/v1`;
 
   let childToken: string;

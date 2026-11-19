@@ -11,6 +11,8 @@ import {
   UpdateParentSettingsInput,
 } from '@fizzy/validation';
 import { UserRole, ParentLinkStatus, NotificationType } from '../../generated/prisma-client/index.js';
+import { RealtimeServer } from '../realtime/index.js';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const parentsRouter = Router();
 
@@ -732,6 +734,29 @@ parentsRouter.patch(
         }
 
         return controls;
+      });
+
+      // Emit Real-time Notification to Child & Family Room
+      const realtime = RealtimeServer.getInstance();
+      realtime.emitToUser(link.child.user.id, RealtimeEvent.PARENT_CONTROL_UPDATED, {
+        childId: link.child.user.id,
+        settings: {
+          isPaused: updatedControls.isPaused,
+          canComment: updatedControls.canComment,
+          canAddFriends: updatedControls.canAddFriends,
+          canWatchShortsReels: updatedControls.canWatchShortsReels,
+          dailyLimitMinutes: updatedControls.dailyLimitMinutes,
+        },
+      });
+      realtime.emitToFamily(user.id, link.child.user.id, RealtimeEvent.PARENT_CONTROL_UPDATED, {
+        childId: link.child.user.id,
+        settings: {
+          isPaused: updatedControls.isPaused,
+          canComment: updatedControls.canComment,
+          canAddFriends: updatedControls.canAddFriends,
+          canWatchShortsReels: updatedControls.canWatchShortsReels,
+          dailyLimitMinutes: updatedControls.dailyLimitMinutes,
+        },
       });
 
       res.status(200).json({

@@ -45,7 +45,8 @@ export class LocalStorageProvider implements IStorageProvider {
     expiresInSeconds: number = 900
   ): Promise<PresignedUploadResult> {
     const signature = crypto.randomBytes(24).toString('hex');
-    const uploadUrl = `http://localhost:${config.port}${config.apiPrefix}/media/local-upload?key=${encodeURIComponent(
+    const port = process.env.TEST_PORT || config.port;
+    const uploadUrl = `http://localhost:${port}${config.apiPrefix}/media/local-upload?key=${encodeURIComponent(
       storageKey
     )}&sig=${signature}`;
 

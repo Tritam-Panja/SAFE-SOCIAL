@@ -7,6 +7,7 @@ describe('Prompt 15: Final End-to-End Scenarios Verification Suite (A, B, C, D)'
   const app = createApp();
   let server: http.Server;
   const PORT = 4098;
+  process.env.TEST_PORT = String(PORT);
   const baseUrl = `http://localhost:${PORT}/api/v1`;
 
   // Tokens & Accounts

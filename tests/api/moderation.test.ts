@@ -7,6 +7,7 @@ describe('Central Content Creation & Zero-Trust Moderation Engine Suite', () => 
   const app = createApp();
   let server: http.Server;
   const PORT = 4040;
+  process.env.TEST_PORT = String(PORT);
   const baseUrl = `http://localhost:${PORT}/api/v1`;
 
   let childToken: string;
