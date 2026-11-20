@@ -2,8 +2,54 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../../prisma.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
 import { UserRole, ContentStatus } from '../../generated/prisma-client/index.js';
+import { RealtimeServer } from '../realtime/index.js';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const adminRouter = Router();
+
+export class AdminMetricsService {
+  public static async getMetrics() {
+    const [
+      totalUsers,
+      childUsers,
+      parentUsers,
+      pendingContent,
+      approvedContent,
+      rejectedContent,
+      reportedCount,
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.count({ where: { role: UserRole.CHILD } }),
+      prisma.user.count({ where: { role: UserRole.PARENT } }),
+      prisma.content.count({ where: { status: ContentStatus.PENDING_REVIEW } }),
+      prisma.content.count({ where: { status: { in: [ContentStatus.APPROVED, ContentStatus.PUBLISHED] } } }),
+      prisma.content.count({ where: { status: ContentStatus.REJECTED } }),
+      prisma.contentReport.count({ where: { status: 'PENDING' } }),
+    ]);
+
+    return {
+      totalUsers,
+      childUsers,
+      parentUsers,
+      pendingSubmissions: pendingContent,
+      approvedContent,
+      rejectedContent,
+      reportedContent: reportedCount,
+    };
+  }
+
+  public static async broadcastMetrics(trigger: string) {
+    try {
+      const metrics = await this.getMetrics();
+      RealtimeServer.getInstance().emitToAdmins(RealtimeEvent.ADMIN_METRICS_UPDATED, {
+        trigger,
+        metrics,
+      });
+    } catch (err) {
+      console.error('[AdminMetricsService] Failed to broadcast live metrics:', err);
+    }
+  }
+}
 
 adminRouter.get('/status', (_req: Request, res: Response) => {
   res.json({ success: true, message: 'Admin module ready' });
@@ -23,22 +69,10 @@ adminRouter.get(
   async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const [
-        totalUsers,
-        childUsers,
-        parentUsers,
-        pendingContent,
-        approvedContent,
-        rejectedContent,
-        reportedCount,
+        metrics,
         recentActions,
       ] = await Promise.all([
-        prisma.user.count(),
-        prisma.user.count({ where: { role: UserRole.CHILD } }),
-        prisma.user.count({ where: { role: UserRole.PARENT } }),
-        prisma.content.count({ where: { status: ContentStatus.PENDING_REVIEW } }),
-        prisma.content.count({ where: { status: { in: [ContentStatus.APPROVED, ContentStatus.PUBLISHED] } } }),
-        prisma.content.count({ where: { status: ContentStatus.REJECTED } }),
-        prisma.contentReport.count({ where: { status: 'PENDING' } }),
+        AdminMetricsService.getMetrics(),
         prisma.moderationAction.findMany({
           take: 10,
           orderBy: { createdAt: 'desc' },
@@ -59,15 +93,7 @@ adminRouter.get(
       res.status(200).json({
         success: true,
         data: {
-          metrics: {
-            totalUsers,
-            childUsers,
-            parentUsers,
-            pendingSubmissions: pendingContent,
-            approvedContent,
-            rejectedContent,
-            reportedContent: reportedCount,
-          },
+          metrics,
           recentActions,
         },
         error: null,

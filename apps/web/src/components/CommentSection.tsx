@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/api';
 import { MessageCircle, Send, Flag, Trash2, Clock, CheckCircle } from 'lucide-react';
+import { useRealtime } from '../context/RealtimeContext';
+import { useAuth } from '../context/AuthContext';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 interface CommentProps {
   contentId: string;
@@ -9,12 +12,25 @@ interface CommentProps {
 }
 
 export const CommentSection: React.FC<CommentProps> = ({ contentId, initialCount = 0 }) => {
+  const { safetyControls } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [text, setText] = useState('');
   const [submissionFeedback, setSubmissionFeedback] = useState<string | null>(null);
   const [reportFeedback, setReportFeedback] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
+  const { on } = useRealtime();
+
+  useEffect(() => {
+    const unsubscribe = on<any>(RealtimeEvent.COMMENT_APPROVED, (payload) => {
+      if (payload && payload.contentId === contentId) {
+        queryClient.invalidateQueries({ queryKey: ['comments', contentId] });
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [contentId, on, queryClient]);
 
   // Fetch approved comments
   const { data: commentsData, isLoading } = useQuery({
@@ -101,23 +117,30 @@ export const CommentSection: React.FC<CommentProps> = ({ contentId, initialCount
           )}
 
           {/* Comment input form */}
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <input
-              type="text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Add a kind comment... (reviewed before posting)"
-              className="flex-1 px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:bg-white"
-              maxLength={280}
-            />
-            <button
-              type="submit"
-              disabled={submitMutation.isPending || !text.trim()}
-              className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors"
-            >
-              <Send className="w-3.5 h-3.5" />
-            </button>
-          </form>
+          {safetyControls?.canComment === false ? (
+            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Commenting has been disabled for your account by your parent or guardian.</span>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex gap-2">
+              <input
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Add a kind comment... (reviewed before posting)"
+                className="flex-1 px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:bg-white"
+                maxLength={280}
+              />
+              <button
+                type="submit"
+                disabled={submitMutation.isPending || !text.trim()}
+                className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </form>
+          )}
 
           {/* Comment list */}
           {isLoading ? (

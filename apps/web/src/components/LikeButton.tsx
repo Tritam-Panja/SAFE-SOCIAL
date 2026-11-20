@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '../services/api';
 import { Heart } from 'lucide-react';
+import { useRealtime } from '../context/RealtimeContext';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 interface LikeButtonProps {
   contentId: string;
@@ -16,6 +18,18 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
 }) => {
   const [hasLiked, setHasLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
+  const { on } = useRealtime();
+
+  useEffect(() => {
+    const unsubscribe = on<any>(RealtimeEvent.REACTION_UPDATED, (payload) => {
+      if (payload && payload.contentId === contentId) {
+        setCount(payload.totalReactions);
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [contentId, on]);
 
   const toggleMutation = useMutation({
     mutationFn: async () => {

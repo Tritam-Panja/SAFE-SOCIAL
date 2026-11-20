@@ -44,7 +44,7 @@ moderationRouter.get(
             take: 1,
           },
         },
-        orderBy: { createdAt: 'asc' }, // FIFO queue
+        orderBy: { createdAt: 'desc' }, // Newest first so fresh submissions appear at the top
       });
 
       res.status(200).json({

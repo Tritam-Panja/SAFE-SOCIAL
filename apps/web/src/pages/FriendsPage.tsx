@@ -1,13 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/api';
 import { Users, UserPlus, Check, X, Shield, Clock } from 'lucide-react';
+import { useRealtime } from '../context/RealtimeContext';
+import { useAuth } from '../context/AuthContext';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const FriendsPage: React.FC = () => {
+  const { safetyControls } = useAuth();
   const [targetUsername, setTargetUsername] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const queryClient = useQueryClient();
+  const { on } = useRealtime();
+
+  useEffect(() => {
+    const unsubReceived = on(RealtimeEvent.FRIEND_REQUEST_RECEIVED, () => {
+      queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+    });
+    const unsubAccepted = on(RealtimeEvent.FRIEND_REQUEST_ACCEPTED, () => {
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+    });
+    const unsubRejected = on(RealtimeEvent.FRIEND_REQUEST_REJECTED, () => {
+      queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+    });
+    const unsubCancelled = on(RealtimeEvent.FRIEND_REQUEST_CANCELLED, () => {
+      queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+    });
+    const unsubRemoved = on(RealtimeEvent.FRIENDSHIP_REMOVED, () => {
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+    });
+
+    return () => {
+      unsubReceived();
+      unsubAccepted();
+      unsubRejected();
+      unsubCancelled();
+      unsubRemoved();
+    };
+  }, [on, queryClient]);
 
   // 1. Fetch Friends List
   const { data: friendsData, isLoading: loadingFriends } = useQuery({
@@ -48,7 +80,7 @@ export const FriendsPage: React.FC = () => {
 
   // 4. Respond to Friend Request (Accept / Reject)
   const respondMutation = useMutation({
-    mutationFn: async ({ requestId, action }: { requestId: string; action: 'ACCEPT' | 'REJECT' }) => {
+    mutationFn: async ({ requestId, action }: { requestId: string; action: 'ACCEPT' | 'REJECT' | 'DECLINE' }) => {
       const res = await apiClient.post(`/friends/respond/${requestId}`, { action });
       return res.data;
     },
@@ -99,40 +131,47 @@ export const FriendsPage: React.FC = () => {
       </div>
 
       {/* Send Friend Request Form */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-        <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-          <UserPlus className="w-4 h-4 text-purple-600" /> Add a Friend
-        </h2>
+      {safetyControls?.canAddFriends === false ? (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-xs font-semibold flex items-center gap-2">
+          <Shield className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>Adding new friends has been turned off by your parent or guardian.</span>
+        </div>
+      ) : (
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+            <UserPlus className="w-4 h-4 text-purple-600" /> Add a Friend
+          </h2>
 
-        {feedback && (
-          <div
-            className={`p-3 rounded-xl text-xs font-semibold ${
-              feedback.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : 'bg-rose-50 text-rose-800 border border-rose-200'
-            }`}
-          >
-            {feedback.message}
-          </div>
-        )}
+          {feedback && (
+            <div
+              className={`p-3 rounded-xl text-xs font-semibold ${
+                feedback.type === 'success'
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : 'bg-rose-50 text-rose-800 border border-rose-200'
+              }`}
+            >
+              {feedback.message}
+            </div>
+          )}
 
-        <form onSubmit={handleSend} className="flex gap-2">
-          <input
-            type="text"
-            value={targetUsername}
-            onChange={(e) => setTargetUsername(e.target.value)}
-            placeholder="Enter friend's username (e.g. maya_explorer)..."
-            className="flex-1 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:bg-white"
-          />
-          <button
-            type="submit"
-            disabled={sendRequestMutation.isPending || !targetUsername.trim()}
-            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors"
-          >
-            Send Request
-          </button>
-        </form>
-      </div>
+          <form onSubmit={handleSend} className="flex gap-2">
+            <input
+              type="text"
+              value={targetUsername}
+              onChange={(e) => setTargetUsername(e.target.value)}
+              placeholder="Enter friend's username (e.g. maya_explorer)..."
+              className="flex-1 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:bg-white"
+            />
+            <button
+              type="submit"
+              disabled={sendRequestMutation.isPending || !targetUsername.trim()}
+              className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors"
+            >
+              Send Request
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Pending Incoming Requests */}
       {incoming.length > 0 && (
@@ -160,7 +199,7 @@ export const FriendsPage: React.FC = () => {
                     <Check className="w-3.5 h-3.5" /> Accept
                   </button>
                   <button
-                    onClick={() => respondMutation.mutate({ requestId: req.id, action: 'REJECT' })}
+                    onClick={() => respondMutation.mutate({ requestId: req.id, action: 'DECLINE' })}
                     disabled={respondMutation.isPending}
                     className="p-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
                     title="Decline"

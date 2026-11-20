@@ -106,6 +106,9 @@ postsRouter.post(
         contentId: newPost.id,
       });
 
+      const { AdminMetricsService } = await import('../admin/index.js');
+      AdminMetricsService.broadcastMetrics('CONTENT_SUBMITTED');
+
       res.status(201).json({
         success: true,
         data: {

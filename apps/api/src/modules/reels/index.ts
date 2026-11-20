@@ -161,6 +161,9 @@ reelsRouter.post(
         contentId: newReel.id,
       });
 
+      const { AdminMetricsService } = await import('../admin/index.js');
+      AdminMetricsService.broadcastMetrics('REEL_SUBMITTED');
+
       res.status(201).json({
         success: true,
         data: {

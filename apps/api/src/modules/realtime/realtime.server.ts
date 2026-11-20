@@ -105,9 +105,33 @@ export class RealtimeServer {
       // Setup secure rooms based strictly on verified database record
       await this.assignSecureRooms(authSocket);
 
-      // Heartbeat & session verification on incoming events
-      socket.use(async (_packet, next) => {
+      // Heartbeat & session verification on incoming events with rate limiting
+      let eventCount = 0;
+      let lastResetTime = Date.now();
+
+      socket.use(async (packet, next) => {
         try {
+          const now = Date.now();
+          if (now - lastResetTime > 60000) {
+            eventCount = 0;
+            lastResetTime = now;
+          }
+          eventCount++;
+
+          // Rate limit: max 60 incoming events per minute per socket
+          if (eventCount > 60) {
+            return next(new Error('RATE_LIMIT_EXCEEDED: Too many events received'));
+          }
+
+          const eventName = packet[0];
+          // Block clients from manually emitting internal or administrative server events
+          const internalPrefixes = ['content:', 'feed:', 'notification:', 'moderation_queue:', 'admin:', 'parent_control:'];
+          if (typeof eventName === 'string' && internalPrefixes.some((p) => eventName.startsWith(p))) {
+            const err = new Error(`FORBIDDEN_EMIT: Clients cannot emit internal server event '${eventName}'`);
+            socket.emit('error', { code: 'FORBIDDEN_EMIT', message: err.message });
+            return next(err);
+          }
+
           const activeSession = await prisma.session.findUnique({
             where: { id: authSocket.sessionId },
             include: { user: true },
@@ -122,6 +146,11 @@ export class RealtimeServer {
         } catch (err: any) {
           next(err);
         }
+      });
+
+      // Disallow client room joining / switching: clients must never call socket.join from client side
+      socket.on('join', () => {
+        socket.emit('error', { code: 'FORBIDDEN', message: 'Manual room subscription is disabled' });
       });
 
       socket.on('disconnect', (reason) => {

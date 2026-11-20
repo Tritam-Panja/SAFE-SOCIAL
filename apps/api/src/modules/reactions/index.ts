@@ -4,6 +4,9 @@ import { requireAuth } from '../../middleware/auth.js';
 import { validateRequest } from '../../middleware/validate.js';
 import { toggleReactionSchema, ToggleReactionInput } from '@fizzy/validation';
 import { FeedService } from '../feed/feed.service.js';
+import { RealtimeServer } from '../realtime/index.js';
+import { RealtimeEvent } from '@fizzy/shared-types';
+import { AgeGroup } from '../../generated/prisma-client/index.js';
 
 export const reactionsRouter = Router();
 
@@ -77,6 +80,25 @@ reactionsRouter.post(
       const totalReactions = await prisma.reaction.count({
         where: { contentId },
       });
+
+      // 4. Emit real-time reaction update to approved age-group audiences
+      const contentWithAudiences = await prisma.content.findUnique({
+        where: { id: contentId },
+        include: { approvedAudiences: true },
+      });
+
+      if (contentWithAudiences) {
+        const targetAudiences =
+          contentWithAudiences.approvedAudiences.length > 0
+            ? contentWithAudiences.approvedAudiences.map((a) => a.ageGroup)
+            : [AgeGroup.JUNIOR, AgeGroup.EXPLORER, AgeGroup.TEEN];
+
+        RealtimeServer.getInstance().emitToAgeGroups(targetAudiences, RealtimeEvent.REACTION_UPDATED, {
+          contentId,
+          totalReactions,
+          emoji,
+        });
+      }
 
       res.status(200).json({
         success: true,

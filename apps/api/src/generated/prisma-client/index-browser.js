@@ -348,6 +348,19 @@ exports.Prisma.NotificationScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.EventOutboxScalarFieldEnum = {
+  id: 'id',
+  eventType: 'eventType',
+  channelType: 'channelType',
+  target: 'target',
+  payloadJson: 'payloadJson',
+  status: 'status',
+  retryCount: 'retryCount',
+  errorMessage: 'errorMessage',
+  processedAt: 'processedAt',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -449,6 +462,12 @@ exports.NotificationType = exports.$Enums.NotificationType = {
   SYSTEM_ALERT: 'SYSTEM_ALERT'
 };
 
+exports.OutboxStatus = exports.$Enums.OutboxStatus = {
+  PENDING: 'PENDING',
+  PROCESSED: 'PROCESSED',
+  FAILED: 'FAILED'
+};
+
 exports.Prisma.ModelName = {
   User: 'User',
   ChildProfile: 'ChildProfile',
@@ -470,7 +489,8 @@ exports.Prisma.ModelName = {
   BlockedUser: 'BlockedUser',
   ParentControl: 'ParentControl',
   ContentReport: 'ContentReport',
-  Notification: 'Notification'
+  Notification: 'Notification',
+  EventOutbox: 'EventOutbox'
 };
 
 /**

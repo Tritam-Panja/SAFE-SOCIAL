@@ -7,6 +7,7 @@ import { UserRole, ReportStatus, NotificationType } from '../../generated/prisma
 import { FeedService } from '../feed/feed.service.js';
 import { RealtimeServer } from '../realtime/index.js';
 import { RealtimeEvent } from '@fizzy/shared-types';
+import { NotificationService } from '../notifications/index.js';
 
 export const reportsRouter = Router();
 
@@ -74,6 +75,9 @@ reportsRouter.post(
         reporterId: user.id,
         reason: report.reason,
       });
+
+      const { AdminMetricsService } = await import('../admin/index.js');
+      AdminMetricsService.broadcastMetrics('REPORT_CREATED');
 
       res.status(201).json({
         success: true,
@@ -192,15 +196,16 @@ reportsRouter.patch(
         });
 
         // Notify reporter that their safety concern was handled
-        await tx.notification.create({
-          data: {
+        await NotificationService.createNotification(
+          {
             userId: report.reporterId,
             type: NotificationType.SYSTEM_ALERT,
             title: 'Report Update',
             message: `Your report has been reviewed and marked as ${status.toLowerCase()}. Thank you for keeping Fizzy safe!`,
             referenceId: report.contentId,
           },
-        });
+          tx
+        );
 
         return r;
       });

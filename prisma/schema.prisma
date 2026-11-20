@@ -479,3 +479,28 @@ model Notification {
   @@index([userId, isRead])
   @@index([createdAt])
 }
+
+// -------------------------------------------------------------
+// TRANSACTIONAL OUTBOX FOR RELIABLE REAL-TIME EVENT DELIVERY
+// -------------------------------------------------------------
+
+enum OutboxStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+model EventOutbox {
+  id              String            @id @default(uuid())
+  eventType       String            // e.g. 'feed:updated', 'content:approved'
+  channelType     String            // 'AGE_GROUP', 'USER', 'ADMIN', 'FAMILY'
+  target          String            // e.g. 'TEEN', 'user:<userId>', 'role:admin'
+  payloadJson     String            // JSON payload
+  status          OutboxStatus      @default(PENDING)
+  retryCount      Int               @default(0)
+  errorMessage    String?
+  processedAt     DateTime?
+  createdAt       DateTime          @default(now())
+
+  @@index([status, createdAt])
+}

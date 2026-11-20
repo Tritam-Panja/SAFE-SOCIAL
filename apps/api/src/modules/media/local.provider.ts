@@ -10,7 +10,11 @@ export class LocalStorageProvider implements IStorageProvider {
   private approvedDir: string;
 
   constructor() {
-    this.baseDir = config.storage.localUploadDir;
+    // Check if running from repo root or apps/api
+    const apiUploads = path.resolve(process.cwd(), 'apps/api/uploads');
+    const localUploads = path.resolve(process.cwd(), 'uploads');
+    this.baseDir = fs.existsSync(apiUploads) ? apiUploads : localUploads;
+
     this.quarantineDir = path.join(this.baseDir, 'quarantine');
     this.approvedDir = path.join(this.baseDir, 'approved');
 
@@ -29,8 +33,10 @@ export class LocalStorageProvider implements IStorageProvider {
 
   private getFilePath(storageKey: string, isQuarantine: boolean = true): string {
     const sanitized = this.sanitizeKey(storageKey);
+    // Remove leading 'quarantine/' or 'approved/' if already present in storageKey
+    const relativeKey = sanitized.replace(/^quarantine[/\\]+/, '').replace(/^approved[/\\]+/, '');
     const root = isQuarantine ? this.quarantineDir : this.approvedDir;
-    const resolved = path.resolve(root, sanitized);
+    const resolved = path.resolve(root, relativeKey);
 
     if (!resolved.startsWith(root)) {
       throw new Error('Access denied: Arbitrary file path traversal detected.');
@@ -111,6 +117,7 @@ export class LocalStorageProvider implements IStorageProvider {
     fs.copyFileSync(src, dest);
     fs.unlinkSync(src);
 
-    return `http://localhost:${config.port}${config.apiPrefix}/media/approved/${approvedKey}`;
+    const cleanApprovedKey = approvedKey.replace(/^approved[/\\]+/, '');
+    return `http://localhost:${config.port}${config.apiPrefix}/media/approved/${cleanApprovedKey}`;
   }
 }

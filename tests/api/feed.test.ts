@@ -114,6 +114,7 @@ describe('Age-Group Feed & Content Visibility Engine Suite', () => {
     // b) Approved Reel (Jordan's Kickflip) - requested JUNIOR+EXPLORER+TEEN, but admin approved strictly for TEEN
     const teenReel = await prisma.content.findFirst({
       where: { type: 'REEL', status: 'APPROVED' },
+      orderBy: { createdAt: 'desc' },
       include: { approvedAudiences: true },
     });
     approvedTeenOnlyReelId = teenReel!.id;

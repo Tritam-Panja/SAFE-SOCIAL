@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { useRealtime } from '../context/RealtimeContext';
 import { apiClient } from '../services/api';
 import { Film, Sparkles, AlertCircle, Eye, ChevronUp, ChevronDown } from 'lucide-react';
 import { LikeButton } from '../components/LikeButton';
 import { CommentSection } from '../components/CommentSection';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const ReelsPage: React.FC = () => {
   const { ageGroup, isAuthenticated } = useAuth();
+  const { on } = useRealtime();
+  const queryClient = useQueryClient();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // 1. Fetch real reels feed filtered at database level for user's ageGroup
@@ -19,6 +23,20 @@ export const ReelsPage: React.FC = () => {
     },
     enabled: isAuthenticated,
   });
+
+  // Listen for real-time feed updates targeted at user's age group
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const unsubscribe = on(RealtimeEvent.FEED_UPDATED, (payload) => {
+      if (payload.type === 'REEL' || payload.type === 'SHORT') {
+        console.log('[Reels] Real-time reel feed update received:', payload);
+        queryClient.invalidateQueries({ queryKey: ['reels-feed', ageGroup] });
+      }
+    });
+
+    return unsubscribe;
+  }, [on, isAuthenticated, ageGroup, queryClient]);
 
   const reels = reelsData?.data || [];
   const currentReel = reels[currentIndex];

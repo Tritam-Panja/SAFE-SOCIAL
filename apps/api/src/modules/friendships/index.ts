@@ -5,6 +5,10 @@ import { validateRequest } from '../../middleware/validate.js';
 import { sendFriendRequestSchema, respondFriendRequestSchema, SendFriendRequestInput, RespondFriendRequestInput } from '@fizzy/validation';
 import { UserRole, FriendRequestStatus } from '../../generated/prisma-client/index.js';
 
+import { NotificationService } from '../notifications/index.js';
+import { RealtimeServer } from '../realtime/index.js';
+import { RealtimeEvent } from '@fizzy/shared-types';
+
 export const friendshipsRouter = Router();
 
 /**
@@ -233,15 +237,20 @@ friendshipsRouter.post(
         },
       });
 
-      // Notification
-      await prisma.notification.create({
-        data: {
-          userId: targetUser.id,
-          type: 'FRIEND_REQUEST',
-          title: 'New Friend Request! 🤝',
-          message: `${user.displayName} (@${user.username}) wants to be friends on Fizzy!`,
-          referenceId: friendRequest.id,
-        },
+      // Notification & Real-time Delivery
+      await NotificationService.createNotification({
+        userId: targetUser.id,
+        type: 'FRIEND_REQUEST',
+        title: 'New Friend Request! 🤝',
+        message: `${user.displayName} (@${user.username}) wants to be friends on Fizzy!`,
+        referenceId: friendRequest.id,
+      });
+
+      RealtimeServer.getInstance().emitToUser(targetUser.id, RealtimeEvent.FRIEND_REQUEST_RECEIVED, {
+        requestId: friendRequest.id,
+        senderId: user.id,
+        senderUsername: user.username,
+        receiverId: targetUser.id,
       });
 
       res.status(201).json({
@@ -298,14 +307,21 @@ friendshipsRouter.post(
             data: { userAId: uA, userBId: uB },
           });
 
-          await tx.notification.create({
-            data: {
+          await NotificationService.createNotification(
+            {
               userId: friendReq.senderId,
               type: 'FRIEND_ACCEPTED',
               title: 'Friend Request Accepted! 🎉',
               message: `${user.displayName} accepted your friend request!`,
               referenceId: requestId,
             },
+            tx
+          );
+
+          RealtimeServer.getInstance().emitToUser(friendReq.senderId, RealtimeEvent.FRIEND_REQUEST_ACCEPTED, {
+            friendshipId: `${uA}_${uB}`,
+            friendId: user.id,
+            friendUsername: user.username,
           });
         });
 
@@ -314,6 +330,12 @@ friendshipsRouter.post(
         await prisma.friendRequest.update({
           where: { id: requestId },
           data: { status: FriendRequestStatus.DECLINED },
+        });
+
+        RealtimeServer.getInstance().emitToUser(friendReq.senderId, RealtimeEvent.FRIEND_REQUEST_REJECTED, {
+          requestId: friendReq.id,
+          senderId: friendReq.senderId,
+          receiverId: friendReq.receiverId,
         });
 
         res.status(200).json({ success: true, message: 'Friend request declined.' });
@@ -344,6 +366,13 @@ friendshipsRouter.delete(
       }
 
       await prisma.friendRequest.delete({ where: { id: friendReq.id } });
+
+      RealtimeServer.getInstance().emitToUser(friendReq.receiverId, RealtimeEvent.FRIEND_REQUEST_CANCELLED, {
+        requestId: friendReq.id,
+        senderId: friendReq.senderId,
+        receiverId: friendReq.receiverId,
+      });
+
       res.status(200).json({ success: true, message: 'Friend request cancelled.' });
     } catch (error) {
       next(error);
@@ -371,7 +400,15 @@ friendshipsRouter.delete(
       }
 
       await prisma.friendship.delete({ where: { id: friendship.id } });
-      res.status(200).json({ success: true, message: 'Friendship removed.' });
+
+      const otherUserId = friendship.userAId === user.id ? friendship.userBId : friendship.userAId;
+      RealtimeServer.getInstance().emitToUser(otherUserId, RealtimeEvent.FRIENDSHIP_REMOVED, {
+        friendshipId: friendship.id,
+        removedBy: user.id,
+        targetUserId: otherUserId,
+      });
+
+      res.status(200).json({ success: true, message: 'Friend friendship removed.' });
     } catch (error) {
       next(error);
     }

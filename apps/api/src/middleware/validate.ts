@@ -8,12 +8,13 @@ export function validateRequest(schema: ZodSchema) {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
+        const errorMessages = error.errors.map((e) => e.message).filter(Boolean);
         res.status(400).json({
           success: false,
           data: null,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Invalid request payload',
+            message: errorMessages.length > 0 ? errorMessages.join('. ') : 'Invalid request payload',
             details: error.errors,
           },
         });

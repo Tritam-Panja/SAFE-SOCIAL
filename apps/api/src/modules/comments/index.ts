@@ -5,6 +5,8 @@ import { validateRequest } from '../../middleware/validate.js';
 import { createCommentInputSchema, reportCommentSchema, CreateCommentInput, ReportCommentInput } from '@fizzy/validation';
 import { UserRole, ContentStatus, ContentType } from '../../generated/prisma-client/index.js';
 import { FeedService } from '../feed/feed.service.js';
+import { RealtimeServer } from '../realtime/index.js';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const commentsRouter = Router();
 
@@ -161,6 +163,21 @@ commentsRouter.post(
 
         return comment;
       });
+
+      // Notify moderators in real-time
+      RealtimeServer.getInstance().emitToAdmins(RealtimeEvent.COMMENT_SUBMITTED, {
+        commentId: result.id,
+        contentId,
+        authorId: user.id,
+        status: result.status,
+      });
+      RealtimeServer.getInstance().emitToAdmins(RealtimeEvent.MODERATION_QUEUE_UPDATED, {
+        action: 'ITEM_ADDED',
+        contentId,
+      });
+
+      const { AdminMetricsService } = await import('../admin/index.js');
+      AdminMetricsService.broadcastMetrics('COMMENT_SUBMITTED');
 
       res.status(201).json({
         success: true,

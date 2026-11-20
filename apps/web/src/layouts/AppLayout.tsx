@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Home,
   Compass,
@@ -19,12 +20,51 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRealtime } from '../context/RealtimeContext';
-import { UserRole } from '@fizzy/shared-types';
+import { apiClient } from '../services/api';
+import { UserRole, RealtimeEvent } from '@fizzy/shared-types';
 
 export const AppLayout: React.FC = () => {
-  const { user, role, ageGroup, isAuthenticated, logout } = useAuth();
-  const { isConnected } = useRealtime();
+  const { user, role, ageGroup, safetyControls, updateSafetyControls, isAuthenticated, logout } = useAuth();
+  const { isConnected, on } = useRealtime();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Query unread notification count
+  const { data: notifData } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const res = await apiClient.get('/notifications?limit=1');
+      return res.data;
+    },
+    enabled: isAuthenticated,
+  });
+
+  const unreadCount = notifData?.meta?.unreadCount || 0;
+
+  // Listen for live parent control changes and notification events
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const unsubNotif = on(RealtimeEvent.NOTIFICATION_CREATED, (payload) => {
+      console.log('[AppLayout] New notification arrived in real-time:', payload.title);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    });
+
+    const unsubParentControl = on<any>(RealtimeEvent.PARENT_CONTROL_UPDATED, (payload) => {
+      console.log('[AppLayout] Parent control updated live:', payload);
+      if (payload?.settings) {
+        updateSafetyControls(payload.settings);
+        queryClient.invalidateQueries({ queryKey: ['feed'] });
+        queryClient.invalidateQueries({ queryKey: ['reels'] });
+        queryClient.invalidateQueries({ queryKey: ['friends'] });
+      }
+    });
+
+    return () => {
+      unsubNotif();
+      unsubParentControl();
+    };
+  }, [isAuthenticated, on, queryClient, updateSafetyControls]);
 
   const handleLogout = async () => {
     await logout();
@@ -262,15 +302,22 @@ export const AppLayout: React.FC = () => {
             <NavLink
               to="/notifications"
               className={({ isActive }) =>
-                `flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                `flex items-center justify-between px-3 py-2.5 rounded-xl font-medium transition-colors ${
                   isActive
                     ? 'bg-purple-100 text-purple-800'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`
               }
             >
-              <Bell className="w-5 h-5" />
-              <span>Alerts</span>
+              <div className="flex items-center space-x-3">
+                <Bell className="w-5 h-5" />
+                <span>Alerts</span>
+              </div>
+              {unreadCount > 0 && (
+                <span className="bg-purple-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </NavLink>
           )}
         </nav>
@@ -278,6 +325,21 @@ export const AppLayout: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 pt-16 pb-20 md:pb-8 px-4 sm:px-6 max-w-4xl mx-auto w-full">
+        {/* Child Account Paused Banner */}
+        {role === UserRole.CHILD && safetyControls?.isPaused && (
+          <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl flex items-start gap-3 shadow-sm animate-in fade-in duration-300">
+            <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-sm shrink-0">
+              ⏸️
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-amber-900">Account Paused by Parent</h3>
+              <p className="text-xs text-amber-800 mt-0.5">
+                {safetyControls.pauseReason || 'Your parent or guardian has paused your platform interactions for a break.'}
+              </p>
+            </div>
+          </div>
+        )}
+
         <Outlet />
       </main>
 

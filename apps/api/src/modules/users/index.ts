@@ -100,7 +100,7 @@ usersRouter.put(
       const user = req.user!;
       const { bio } = req.body as UpdateBioInput;
 
-      await prisma.$transaction(async (tx) => {
+      const modContent = await prisma.$transaction(async (tx) => {
         // Save to pendingBio without changing active bio
         await tx.user.update({
           where: { id: user.id },
@@ -108,7 +108,7 @@ usersRouter.put(
         });
 
         // Enqueue to moderation system
-        const modContent = await tx.content.create({
+        const content = await tx.content.create({
           data: {
             authorId: user.id,
             type: ContentType.PROFILE_BIO,
@@ -119,12 +119,32 @@ usersRouter.put(
 
         await tx.contentSubmission.create({
           data: {
-            contentId: modContent.id,
+            contentId: content.id,
             submittedById: user.id,
             notes: 'Profile bio update',
           },
         });
+
+        return content;
       });
+
+      // Emit real-time moderation alert
+      const { RealtimeServer } = await import('../realtime/index.js');
+      const { RealtimeEvent } = await import('@fizzy/shared-types');
+      RealtimeServer.getInstance().emitToAdmins(RealtimeEvent.CONTENT_SUBMITTED, {
+        contentId: modContent.id,
+        type: ContentType.PROFILE_BIO,
+        authorId: user.id,
+        authorUsername: user.username,
+        submittedAt: new Date().toISOString(),
+      });
+      RealtimeServer.getInstance().emitToAdmins(RealtimeEvent.MODERATION_QUEUE_UPDATED, {
+        action: 'ITEM_ADDED',
+        contentId: modContent.id,
+      });
+
+      const { AdminMetricsService } = await import('../admin/index.js');
+      AdminMetricsService.broadcastMetrics('BIO_SUBMITTED');
 
       res.status(200).json({
         success: true,
@@ -168,13 +188,13 @@ usersRouter.put(
         return;
       }
 
-      await prisma.$transaction(async (tx) => {
+      const modContent = await prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: user.id },
           data: { pendingAvatarUrl: mediaAsset.url },
         });
 
-        const modContent = await tx.content.create({
+        const content = await tx.content.create({
           data: {
             authorId: user.id,
             type: ContentType.PROFILE_PHOTO,
@@ -184,17 +204,37 @@ usersRouter.put(
 
         await tx.mediaAsset.update({
           where: { id: mediaAsset.id },
-          data: { contentId: modContent.id },
+          data: { contentId: content.id },
         });
 
         await tx.contentSubmission.create({
           data: {
-            contentId: modContent.id,
+            contentId: content.id,
             submittedById: user.id,
             notes: 'Profile avatar photo update',
           },
         });
+
+        return content;
       });
+
+      // Emit real-time moderation alert
+      const { RealtimeServer } = await import('../realtime/index.js');
+      const { RealtimeEvent } = await import('@fizzy/shared-types');
+      RealtimeServer.getInstance().emitToAdmins(RealtimeEvent.CONTENT_SUBMITTED, {
+        contentId: modContent.id,
+        type: ContentType.PROFILE_PHOTO,
+        authorId: user.id,
+        authorUsername: user.username,
+        submittedAt: new Date().toISOString(),
+      });
+      RealtimeServer.getInstance().emitToAdmins(RealtimeEvent.MODERATION_QUEUE_UPDATED, {
+        action: 'ITEM_ADDED',
+        contentId: modContent.id,
+      });
+
+      const { AdminMetricsService } = await import('../admin/index.js');
+      AdminMetricsService.broadcastMetrics('AVATAR_SUBMITTED');
 
       res.status(200).json({
         success: true,

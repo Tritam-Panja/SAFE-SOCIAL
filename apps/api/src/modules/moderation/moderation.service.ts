@@ -1,7 +1,7 @@
 import { ContentStatus, ReviewDecision, AgeGroup, Prisma } from '../../generated/prisma-client/index.js';
 import { prisma } from '../../prisma.js';
 import { getStorageProvider } from '../media/storage.factory.js';
-import { RealtimeServer } from '../realtime/index.js';
+import { RealtimeServer, OutboxService } from '../realtime/index.js';
 import { RealtimeEvent } from '@fizzy/shared-types';
 
 export interface ModerationTransitionResult {
@@ -111,7 +111,7 @@ export class ModerationService {
   }): Promise<ModerationTransitionResult> {
     const { contentId, adminId, decision, approvedAudiences, reason, internalNotes } = params;
 
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Fetch content with relations
       const content = await tx.content.findUnique({
         where: { id: contentId },
@@ -151,11 +151,13 @@ export class ModerationService {
       }
 
       // 4. Handle audience rules per content type
+      let finalAudiencesToStore: AgeGroup[] = [];
+
       if (decision === ReviewDecision.APPROVE) {
         if (content.type === 'POST') {
           // Rule: Posts do not require creator selection and are approved across all tiers by default
           // unless specified by admin
-          const finalPostAudiences =
+          finalAudiencesToStore =
             approvedAudiences && approvedAudiences.length > 0
               ? approvedAudiences
               : [AgeGroup.JUNIOR, AgeGroup.EXPLORER, AgeGroup.TEEN];
@@ -163,7 +165,7 @@ export class ModerationService {
           // Delete existing approved audiences if re-evaluating
           await tx.contentApprovedAudience.deleteMany({ where: { contentId } });
           await tx.contentApprovedAudience.createMany({
-            data: finalPostAudiences.map((tier) => ({
+            data: finalAudiencesToStore.map((tier) => ({
               contentId,
               ageGroup: tier,
             })),
@@ -189,6 +191,8 @@ export class ModerationService {
               );
             }
           }
+
+          finalAudiencesToStore = approvedAudiences;
 
           await tx.contentApprovedAudience.deleteMany({ where: { contentId } });
           await tx.contentApprovedAudience.createMany({
@@ -246,10 +250,91 @@ export class ModerationService {
         }
       }
 
+      // 4b. Special handling for COMMENT content type
+      let approvedCommentData: {
+        id: string;
+        contentId: string;
+        text: string;
+        author: {
+          id: string;
+          username: string;
+          displayName: string;
+          avatarUrl: string | null;
+          ageGroup: string | null;
+        };
+        createdAt: string;
+        targetAgeGroups: AgeGroup[];
+      } | null = null;
+
+      if (content.type === 'COMMENT') {
+        const commentStatus =
+          decision === ReviewDecision.APPROVE
+            ? ContentStatus.APPROVED
+            : decision === ReviewDecision.REJECT
+            ? ContentStatus.REJECTED
+            : ContentStatus.PENDING_REVIEW;
+
+        // Extract parent contentId from submissions notes (e.g. "Comment on content <contentId>")
+        const subNotes = content.submissions[0]?.notes || '';
+        const match = subNotes.match(/Comment on content ([a-zA-Z0-9_-]+)/);
+        const parentContentId = match ? match[1] : null;
+
+        const targetComment = await tx.comment.findFirst({
+          where: {
+            authorId: content.authorId,
+            ...(parentContentId ? { contentId: parentContentId } : {}),
+            status: ContentStatus.PENDING_REVIEW,
+          },
+          orderBy: { createdAt: 'desc' },
+          include: {
+            author: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                avatarUrl: true,
+                ageGroup: true,
+              },
+            },
+          },
+        });
+
+        if (targetComment) {
+          await tx.comment.update({
+            where: { id: targetComment.id },
+            data: { status: commentStatus },
+          });
+
+          if (decision === ReviewDecision.APPROVE) {
+            // Find parent content's approved audiences
+            const parentContent = await tx.content.findUnique({
+              where: { id: targetComment.contentId },
+              include: { approvedAudiences: true },
+            });
+
+            const parentAudiences =
+              parentContent && parentContent.approvedAudiences.length > 0
+                ? parentContent.approvedAudiences.map((a) => a.ageGroup)
+                : [AgeGroup.JUNIOR, AgeGroup.EXPLORER, AgeGroup.TEEN];
+
+            approvedCommentData = {
+              id: targetComment.id,
+              contentId: targetComment.contentId,
+              text: targetComment.text,
+              author: targetComment.author,
+              createdAt: targetComment.createdAt.toISOString(),
+              targetAgeGroups: parentAudiences,
+            };
+          }
+        }
+      }
+
       // 5. Update content status
       await tx.content.update({
         where: { id: contentId },
-        data: { status: newStatus },
+        data: {
+          status: newStatus,
+        },
       });
 
       // 6. Ensure a submission record exists to link the review
@@ -308,67 +393,111 @@ export class ModerationService {
       const notif = await tx.notification.create({
         data: {
           userId: content.authorId,
-          type: decision === ReviewDecision.APPROVE ? 'CONTENT_APPROVED' : 'CONTENT_REJECTED',
+          type:
+            decision === ReviewDecision.APPROVE
+              ? 'CONTENT_APPROVED'
+              : decision === ReviewDecision.REQUEST_CHANGES
+              ? 'SYSTEM_ALERT'
+              : 'CONTENT_REJECTED',
           title: notifTitle,
           message: notifMessage,
           referenceId: contentId,
         },
       });
 
-      // Post-transaction real-time event dispatch
-      const realtime = RealtimeServer.getInstance();
-
-      // 1. Notify Author
-      if (decision === ReviewDecision.APPROVE) {
-        realtime.emitToUser(content.authorId, RealtimeEvent.CONTENT_APPROVED, {
-          contentId,
-          type: content.type,
-          title: content.title || 'Untitled',
-          approvedAudiences: approvedAudiences || [],
-        });
-        realtime.emitToUser(content.authorId, RealtimeEvent.NOTIFICATION_CREATED, {
+      // Deliver database notification to user
+      await OutboxService.enqueue(tx, {
+        eventType: RealtimeEvent.NOTIFICATION_CREATED,
+        channelType: 'USER',
+        target: `user:${content.authorId}`,
+        payload: {
           id: notif.id,
           userId: content.authorId,
           type: notif.type,
           title: notif.title,
           message: notif.message,
+          referenceId: notif.referenceId,
           createdAt: notif.createdAt.toISOString(),
+        },
+      });
+
+      // 10. Enqueue events into transactional outbox
+      if (decision === ReviewDecision.APPROVE) {
+        await OutboxService.enqueue(tx, {
+          eventType: RealtimeEvent.CONTENT_APPROVED,
+          channelType: 'USER',
+          target: `user:${content.authorId}`,
+          payload: {
+            contentId,
+            type: content.type,
+            title: content.title || 'Untitled',
+            approvedAudiences: finalAudiencesToStore,
+          },
         });
 
-        // 2. Broadcast feed update to approved age group rooms
-        if (approvedAudiences && approvedAudiences.length > 0) {
-          realtime.emitToAgeGroups(approvedAudiences, RealtimeEvent.FEED_UPDATED, {
-            type: content.type,
-            targetAgeGroups: approvedAudiences,
-            action: 'NEW_CONTENT',
+        // Enqueue feed update for each verified approved audience
+        for (const tier of finalAudiencesToStore) {
+          await OutboxService.enqueue(tx, {
+            eventType: RealtimeEvent.FEED_UPDATED,
+            channelType: 'AGE_GROUP',
+            target: tier,
+            payload: {
+              type: content.type,
+              targetAgeGroups: finalAudiencesToStore,
+              action: 'NEW_CONTENT',
+            },
           });
         }
+
+        // If approved a comment, enqueue COMMENT_APPROVED event for the parent content audiences
+        if (approvedCommentData) {
+          for (const tier of approvedCommentData.targetAgeGroups) {
+            await OutboxService.enqueue(tx, {
+              eventType: RealtimeEvent.COMMENT_APPROVED,
+              channelType: 'AGE_GROUP',
+              target: tier,
+              payload: {
+                commentId: approvedCommentData.id,
+                contentId: approvedCommentData.contentId,
+                text: approvedCommentData.text,
+                author: approvedCommentData.author,
+                createdAt: approvedCommentData.createdAt,
+              },
+            });
+          }
+        }
       } else if (decision === ReviewDecision.REJECT) {
-        realtime.emitToUser(content.authorId, RealtimeEvent.CONTENT_REJECTED, {
-          contentId,
-          type: content.type,
-          reason: reason || 'Community guidelines violation',
-        });
-        realtime.emitToUser(content.authorId, RealtimeEvent.NOTIFICATION_CREATED, {
-          id: notif.id,
-          userId: content.authorId,
-          type: notif.type,
-          title: notif.title,
-          message: notif.message,
-          createdAt: notif.createdAt.toISOString(),
+        await OutboxService.enqueue(tx, {
+          eventType: RealtimeEvent.CONTENT_REJECTED,
+          channelType: 'USER',
+          target: `user:${content.authorId}`,
+          payload: {
+            contentId,
+            type: content.type,
+            reason: reason || 'Community guidelines violation',
+          },
         });
       } else if (decision === ReviewDecision.REQUEST_CHANGES) {
-        realtime.emitToUser(content.authorId, RealtimeEvent.CONTENT_CHANGES_REQUESTED, {
-          contentId,
-          type: content.type,
-          reason: reason || 'Changes requested',
+        await OutboxService.enqueue(tx, {
+          eventType: RealtimeEvent.CONTENT_CHANGES_REQUESTED,
+          channelType: 'USER',
+          target: `user:${content.authorId}`,
+          payload: {
+            contentId,
+            type: content.type,
+            reason: reason || 'Changes requested',
+          },
         });
       }
 
-      // 3. Notify Admins moderation queue updated
-      realtime.emitToAdmins(RealtimeEvent.MODERATION_QUEUE_UPDATED, {
-        action: 'ITEM_REVIEWED',
-        contentId,
+      await OutboxService.enqueue(tx, {
+        eventType: RealtimeEvent.MODERATION_QUEUE_UPDATED,
+        channelType: 'ADMIN',
+        target: 'role:admin',
+        payload: {
+          action: 'ITEM_REVIEWED',
+          contentId,
+        },
       });
 
       return {
@@ -379,5 +508,20 @@ export class ModerationService {
         reviewId: review.id,
       };
     });
+
+    // 11. Trigger immediate outbox delivery now that database transaction has committed
+    await OutboxService.processPendingEvents().catch((err) => {
+      console.error('[Moderation] Error delivering outbox events:', err);
+    });
+
+    // 12. Broadcast updated admin dashboard metrics
+    try {
+      const { AdminMetricsService } = await import('../admin/index.js');
+      await AdminMetricsService.broadcastMetrics(`DECISION_${decision}`);
+    } catch (e) {
+      console.error('[Moderation] Error broadcasting metrics:', e);
+    }
+
+    return result;
   }
 }

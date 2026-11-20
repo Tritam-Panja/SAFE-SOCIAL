@@ -22,7 +22,7 @@ export const sendFriendRequestSchema = z.object({
 });
 
 export const respondFriendRequestSchema = z.object({
-  action: z.enum(['ACCEPT', 'DECLINE']),
+  action: z.enum(['ACCEPT', 'DECLINE', 'REJECT']),
 });
 
 export type UpdateDisplayNameInput = z.infer<typeof updateDisplayNameSchema>;

@@ -118,6 +118,11 @@ export type ContentReport = $Result.DefaultSelection<Prisma.$ContentReportPayloa
  * 
  */
 export type Notification = $Result.DefaultSelection<Prisma.$NotificationPayload>
+/**
+ * Model EventOutbox
+ * 
+ */
+export type EventOutbox = $Result.DefaultSelection<Prisma.$EventOutboxPayload>
 
 /**
  * Enums
@@ -228,6 +233,15 @@ export const NotificationType: {
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]
 
+
+export const OutboxStatus: {
+  PENDING: 'PENDING',
+  PROCESSED: 'PROCESSED',
+  FAILED: 'FAILED'
+};
+
+export type OutboxStatus = (typeof OutboxStatus)[keyof typeof OutboxStatus]
+
 }
 
 export type UserRole = $Enums.UserRole
@@ -269,6 +283,10 @@ export const ReportStatus: typeof $Enums.ReportStatus
 export type NotificationType = $Enums.NotificationType
 
 export const NotificationType: typeof $Enums.NotificationType
+
+export type OutboxStatus = $Enums.OutboxStatus
+
+export const OutboxStatus: typeof $Enums.OutboxStatus
 
 /**
  * ##  Prisma Client ʲˢ
@@ -597,6 +615,16 @@ export class PrismaClient<
     * ```
     */
   get notification(): Prisma.NotificationDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.eventOutbox`: Exposes CRUD operations for the **EventOutbox** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more EventOutboxes
+    * const eventOutboxes = await prisma.eventOutbox.findMany()
+    * ```
+    */
+  get eventOutbox(): Prisma.EventOutboxDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -1058,7 +1086,8 @@ export namespace Prisma {
     BlockedUser: 'BlockedUser',
     ParentControl: 'ParentControl',
     ContentReport: 'ContentReport',
-    Notification: 'Notification'
+    Notification: 'Notification',
+    EventOutbox: 'EventOutbox'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1077,7 +1106,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "childProfile" | "parentProfile" | "parentChildLink" | "session" | "content" | "mediaAsset" | "contentRequestedAudience" | "contentApprovedAudience" | "contentSubmission" | "contentReview" | "moderationAction" | "auditLog" | "comment" | "reaction" | "friendRequest" | "friendship" | "blockedUser" | "parentControl" | "contentReport" | "notification"
+      modelProps: "user" | "childProfile" | "parentProfile" | "parentChildLink" | "session" | "content" | "mediaAsset" | "contentRequestedAudience" | "contentApprovedAudience" | "contentSubmission" | "contentReview" | "moderationAction" | "auditLog" | "comment" | "reaction" | "friendRequest" | "friendship" | "blockedUser" | "parentControl" | "contentReport" | "notification" | "eventOutbox"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2635,6 +2664,80 @@ export namespace Prisma {
           }
         }
       }
+      EventOutbox: {
+        payload: Prisma.$EventOutboxPayload<ExtArgs>
+        fields: Prisma.EventOutboxFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.EventOutboxFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EventOutboxPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.EventOutboxFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EventOutboxPayload>
+          }
+          findFirst: {
+            args: Prisma.EventOutboxFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EventOutboxPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.EventOutboxFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EventOutboxPayload>
+          }
+          findMany: {
+            args: Prisma.EventOutboxFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EventOutboxPayload>[]
+          }
+          create: {
+            args: Prisma.EventOutboxCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EventOutboxPayload>
+          }
+          createMany: {
+            args: Prisma.EventOutboxCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.EventOutboxCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EventOutboxPayload>[]
+          }
+          delete: {
+            args: Prisma.EventOutboxDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EventOutboxPayload>
+          }
+          update: {
+            args: Prisma.EventOutboxUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EventOutboxPayload>
+          }
+          deleteMany: {
+            args: Prisma.EventOutboxDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.EventOutboxUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.EventOutboxUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EventOutboxPayload>[]
+          }
+          upsert: {
+            args: Prisma.EventOutboxUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EventOutboxPayload>
+          }
+          aggregate: {
+            args: Prisma.EventOutboxAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateEventOutbox>
+          }
+          groupBy: {
+            args: Prisma.EventOutboxGroupByArgs<ExtArgs>
+            result: $Utils.Optional<EventOutboxGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.EventOutboxCountArgs<ExtArgs>
+            result: $Utils.Optional<EventOutboxCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -2752,6 +2855,7 @@ export namespace Prisma {
     parentControl?: ParentControlOmit
     contentReport?: ContentReportOmit
     notification?: NotificationOmit
+    eventOutbox?: EventOutboxOmit
   }
 
   /* Types for Logging */
@@ -27249,6 +27353,1100 @@ export namespace Prisma {
 
 
   /**
+   * Model EventOutbox
+   */
+
+  export type AggregateEventOutbox = {
+    _count: EventOutboxCountAggregateOutputType | null
+    _avg: EventOutboxAvgAggregateOutputType | null
+    _sum: EventOutboxSumAggregateOutputType | null
+    _min: EventOutboxMinAggregateOutputType | null
+    _max: EventOutboxMaxAggregateOutputType | null
+  }
+
+  export type EventOutboxAvgAggregateOutputType = {
+    retryCount: number | null
+  }
+
+  export type EventOutboxSumAggregateOutputType = {
+    retryCount: number | null
+  }
+
+  export type EventOutboxMinAggregateOutputType = {
+    id: string | null
+    eventType: string | null
+    channelType: string | null
+    target: string | null
+    payloadJson: string | null
+    status: $Enums.OutboxStatus | null
+    retryCount: number | null
+    errorMessage: string | null
+    processedAt: Date | null
+    createdAt: Date | null
+  }
+
+  export type EventOutboxMaxAggregateOutputType = {
+    id: string | null
+    eventType: string | null
+    channelType: string | null
+    target: string | null
+    payloadJson: string | null
+    status: $Enums.OutboxStatus | null
+    retryCount: number | null
+    errorMessage: string | null
+    processedAt: Date | null
+    createdAt: Date | null
+  }
+
+  export type EventOutboxCountAggregateOutputType = {
+    id: number
+    eventType: number
+    channelType: number
+    target: number
+    payloadJson: number
+    status: number
+    retryCount: number
+    errorMessage: number
+    processedAt: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type EventOutboxAvgAggregateInputType = {
+    retryCount?: true
+  }
+
+  export type EventOutboxSumAggregateInputType = {
+    retryCount?: true
+  }
+
+  export type EventOutboxMinAggregateInputType = {
+    id?: true
+    eventType?: true
+    channelType?: true
+    target?: true
+    payloadJson?: true
+    status?: true
+    retryCount?: true
+    errorMessage?: true
+    processedAt?: true
+    createdAt?: true
+  }
+
+  export type EventOutboxMaxAggregateInputType = {
+    id?: true
+    eventType?: true
+    channelType?: true
+    target?: true
+    payloadJson?: true
+    status?: true
+    retryCount?: true
+    errorMessage?: true
+    processedAt?: true
+    createdAt?: true
+  }
+
+  export type EventOutboxCountAggregateInputType = {
+    id?: true
+    eventType?: true
+    channelType?: true
+    target?: true
+    payloadJson?: true
+    status?: true
+    retryCount?: true
+    errorMessage?: true
+    processedAt?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type EventOutboxAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EventOutbox to aggregate.
+     */
+    where?: EventOutboxWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EventOutboxes to fetch.
+     */
+    orderBy?: EventOutboxOrderByWithRelationInput | EventOutboxOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: EventOutboxWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EventOutboxes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EventOutboxes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned EventOutboxes
+    **/
+    _count?: true | EventOutboxCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: EventOutboxAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: EventOutboxSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: EventOutboxMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: EventOutboxMaxAggregateInputType
+  }
+
+  export type GetEventOutboxAggregateType<T extends EventOutboxAggregateArgs> = {
+        [P in keyof T & keyof AggregateEventOutbox]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateEventOutbox[P]>
+      : GetScalarType<T[P], AggregateEventOutbox[P]>
+  }
+
+
+
+
+  export type EventOutboxGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EventOutboxWhereInput
+    orderBy?: EventOutboxOrderByWithAggregationInput | EventOutboxOrderByWithAggregationInput[]
+    by: EventOutboxScalarFieldEnum[] | EventOutboxScalarFieldEnum
+    having?: EventOutboxScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: EventOutboxCountAggregateInputType | true
+    _avg?: EventOutboxAvgAggregateInputType
+    _sum?: EventOutboxSumAggregateInputType
+    _min?: EventOutboxMinAggregateInputType
+    _max?: EventOutboxMaxAggregateInputType
+  }
+
+  export type EventOutboxGroupByOutputType = {
+    id: string
+    eventType: string
+    channelType: string
+    target: string
+    payloadJson: string
+    status: $Enums.OutboxStatus
+    retryCount: number
+    errorMessage: string | null
+    processedAt: Date | null
+    createdAt: Date
+    _count: EventOutboxCountAggregateOutputType | null
+    _avg: EventOutboxAvgAggregateOutputType | null
+    _sum: EventOutboxSumAggregateOutputType | null
+    _min: EventOutboxMinAggregateOutputType | null
+    _max: EventOutboxMaxAggregateOutputType | null
+  }
+
+  type GetEventOutboxGroupByPayload<T extends EventOutboxGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<EventOutboxGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof EventOutboxGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], EventOutboxGroupByOutputType[P]>
+            : GetScalarType<T[P], EventOutboxGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type EventOutboxSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    eventType?: boolean
+    channelType?: boolean
+    target?: boolean
+    payloadJson?: boolean
+    status?: boolean
+    retryCount?: boolean
+    errorMessage?: boolean
+    processedAt?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["eventOutbox"]>
+
+  export type EventOutboxSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    eventType?: boolean
+    channelType?: boolean
+    target?: boolean
+    payloadJson?: boolean
+    status?: boolean
+    retryCount?: boolean
+    errorMessage?: boolean
+    processedAt?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["eventOutbox"]>
+
+  export type EventOutboxSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    eventType?: boolean
+    channelType?: boolean
+    target?: boolean
+    payloadJson?: boolean
+    status?: boolean
+    retryCount?: boolean
+    errorMessage?: boolean
+    processedAt?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["eventOutbox"]>
+
+  export type EventOutboxSelectScalar = {
+    id?: boolean
+    eventType?: boolean
+    channelType?: boolean
+    target?: boolean
+    payloadJson?: boolean
+    status?: boolean
+    retryCount?: boolean
+    errorMessage?: boolean
+    processedAt?: boolean
+    createdAt?: boolean
+  }
+
+  export type EventOutboxOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "eventType" | "channelType" | "target" | "payloadJson" | "status" | "retryCount" | "errorMessage" | "processedAt" | "createdAt", ExtArgs["result"]["eventOutbox"]>
+
+  export type $EventOutboxPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "EventOutbox"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      eventType: string
+      channelType: string
+      target: string
+      payloadJson: string
+      status: $Enums.OutboxStatus
+      retryCount: number
+      errorMessage: string | null
+      processedAt: Date | null
+      createdAt: Date
+    }, ExtArgs["result"]["eventOutbox"]>
+    composites: {}
+  }
+
+  type EventOutboxGetPayload<S extends boolean | null | undefined | EventOutboxDefaultArgs> = $Result.GetResult<Prisma.$EventOutboxPayload, S>
+
+  type EventOutboxCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<EventOutboxFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: EventOutboxCountAggregateInputType | true
+    }
+
+  export interface EventOutboxDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['EventOutbox'], meta: { name: 'EventOutbox' } }
+    /**
+     * Find zero or one EventOutbox that matches the filter.
+     * @param {EventOutboxFindUniqueArgs} args - Arguments to find a EventOutbox
+     * @example
+     * // Get one EventOutbox
+     * const eventOutbox = await prisma.eventOutbox.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends EventOutboxFindUniqueArgs>(args: SelectSubset<T, EventOutboxFindUniqueArgs<ExtArgs>>): Prisma__EventOutboxClient<$Result.GetResult<Prisma.$EventOutboxPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one EventOutbox that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {EventOutboxFindUniqueOrThrowArgs} args - Arguments to find a EventOutbox
+     * @example
+     * // Get one EventOutbox
+     * const eventOutbox = await prisma.eventOutbox.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends EventOutboxFindUniqueOrThrowArgs>(args: SelectSubset<T, EventOutboxFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EventOutboxClient<$Result.GetResult<Prisma.$EventOutboxPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EventOutbox that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EventOutboxFindFirstArgs} args - Arguments to find a EventOutbox
+     * @example
+     * // Get one EventOutbox
+     * const eventOutbox = await prisma.eventOutbox.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends EventOutboxFindFirstArgs>(args?: SelectSubset<T, EventOutboxFindFirstArgs<ExtArgs>>): Prisma__EventOutboxClient<$Result.GetResult<Prisma.$EventOutboxPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EventOutbox that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EventOutboxFindFirstOrThrowArgs} args - Arguments to find a EventOutbox
+     * @example
+     * // Get one EventOutbox
+     * const eventOutbox = await prisma.eventOutbox.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends EventOutboxFindFirstOrThrowArgs>(args?: SelectSubset<T, EventOutboxFindFirstOrThrowArgs<ExtArgs>>): Prisma__EventOutboxClient<$Result.GetResult<Prisma.$EventOutboxPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more EventOutboxes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EventOutboxFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all EventOutboxes
+     * const eventOutboxes = await prisma.eventOutbox.findMany()
+     * 
+     * // Get first 10 EventOutboxes
+     * const eventOutboxes = await prisma.eventOutbox.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const eventOutboxWithIdOnly = await prisma.eventOutbox.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends EventOutboxFindManyArgs>(args?: SelectSubset<T, EventOutboxFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventOutboxPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a EventOutbox.
+     * @param {EventOutboxCreateArgs} args - Arguments to create a EventOutbox.
+     * @example
+     * // Create one EventOutbox
+     * const EventOutbox = await prisma.eventOutbox.create({
+     *   data: {
+     *     // ... data to create a EventOutbox
+     *   }
+     * })
+     * 
+     */
+    create<T extends EventOutboxCreateArgs>(args: SelectSubset<T, EventOutboxCreateArgs<ExtArgs>>): Prisma__EventOutboxClient<$Result.GetResult<Prisma.$EventOutboxPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many EventOutboxes.
+     * @param {EventOutboxCreateManyArgs} args - Arguments to create many EventOutboxes.
+     * @example
+     * // Create many EventOutboxes
+     * const eventOutbox = await prisma.eventOutbox.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends EventOutboxCreateManyArgs>(args?: SelectSubset<T, EventOutboxCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many EventOutboxes and returns the data saved in the database.
+     * @param {EventOutboxCreateManyAndReturnArgs} args - Arguments to create many EventOutboxes.
+     * @example
+     * // Create many EventOutboxes
+     * const eventOutbox = await prisma.eventOutbox.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many EventOutboxes and only return the `id`
+     * const eventOutboxWithIdOnly = await prisma.eventOutbox.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends EventOutboxCreateManyAndReturnArgs>(args?: SelectSubset<T, EventOutboxCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventOutboxPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a EventOutbox.
+     * @param {EventOutboxDeleteArgs} args - Arguments to delete one EventOutbox.
+     * @example
+     * // Delete one EventOutbox
+     * const EventOutbox = await prisma.eventOutbox.delete({
+     *   where: {
+     *     // ... filter to delete one EventOutbox
+     *   }
+     * })
+     * 
+     */
+    delete<T extends EventOutboxDeleteArgs>(args: SelectSubset<T, EventOutboxDeleteArgs<ExtArgs>>): Prisma__EventOutboxClient<$Result.GetResult<Prisma.$EventOutboxPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one EventOutbox.
+     * @param {EventOutboxUpdateArgs} args - Arguments to update one EventOutbox.
+     * @example
+     * // Update one EventOutbox
+     * const eventOutbox = await prisma.eventOutbox.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends EventOutboxUpdateArgs>(args: SelectSubset<T, EventOutboxUpdateArgs<ExtArgs>>): Prisma__EventOutboxClient<$Result.GetResult<Prisma.$EventOutboxPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more EventOutboxes.
+     * @param {EventOutboxDeleteManyArgs} args - Arguments to filter EventOutboxes to delete.
+     * @example
+     * // Delete a few EventOutboxes
+     * const { count } = await prisma.eventOutbox.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends EventOutboxDeleteManyArgs>(args?: SelectSubset<T, EventOutboxDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EventOutboxes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EventOutboxUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many EventOutboxes
+     * const eventOutbox = await prisma.eventOutbox.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends EventOutboxUpdateManyArgs>(args: SelectSubset<T, EventOutboxUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EventOutboxes and returns the data updated in the database.
+     * @param {EventOutboxUpdateManyAndReturnArgs} args - Arguments to update many EventOutboxes.
+     * @example
+     * // Update many EventOutboxes
+     * const eventOutbox = await prisma.eventOutbox.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more EventOutboxes and only return the `id`
+     * const eventOutboxWithIdOnly = await prisma.eventOutbox.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends EventOutboxUpdateManyAndReturnArgs>(args: SelectSubset<T, EventOutboxUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventOutboxPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one EventOutbox.
+     * @param {EventOutboxUpsertArgs} args - Arguments to update or create a EventOutbox.
+     * @example
+     * // Update or create a EventOutbox
+     * const eventOutbox = await prisma.eventOutbox.upsert({
+     *   create: {
+     *     // ... data to create a EventOutbox
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the EventOutbox we want to update
+     *   }
+     * })
+     */
+    upsert<T extends EventOutboxUpsertArgs>(args: SelectSubset<T, EventOutboxUpsertArgs<ExtArgs>>): Prisma__EventOutboxClient<$Result.GetResult<Prisma.$EventOutboxPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of EventOutboxes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EventOutboxCountArgs} args - Arguments to filter EventOutboxes to count.
+     * @example
+     * // Count the number of EventOutboxes
+     * const count = await prisma.eventOutbox.count({
+     *   where: {
+     *     // ... the filter for the EventOutboxes we want to count
+     *   }
+     * })
+    **/
+    count<T extends EventOutboxCountArgs>(
+      args?: Subset<T, EventOutboxCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], EventOutboxCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a EventOutbox.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EventOutboxAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends EventOutboxAggregateArgs>(args: Subset<T, EventOutboxAggregateArgs>): Prisma.PrismaPromise<GetEventOutboxAggregateType<T>>
+
+    /**
+     * Group by EventOutbox.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EventOutboxGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends EventOutboxGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: EventOutboxGroupByArgs['orderBy'] }
+        : { orderBy?: EventOutboxGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, EventOutboxGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEventOutboxGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the EventOutbox model
+   */
+  readonly fields: EventOutboxFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for EventOutbox.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__EventOutboxClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the EventOutbox model
+   */
+  interface EventOutboxFieldRefs {
+    readonly id: FieldRef<"EventOutbox", 'String'>
+    readonly eventType: FieldRef<"EventOutbox", 'String'>
+    readonly channelType: FieldRef<"EventOutbox", 'String'>
+    readonly target: FieldRef<"EventOutbox", 'String'>
+    readonly payloadJson: FieldRef<"EventOutbox", 'String'>
+    readonly status: FieldRef<"EventOutbox", 'OutboxStatus'>
+    readonly retryCount: FieldRef<"EventOutbox", 'Int'>
+    readonly errorMessage: FieldRef<"EventOutbox", 'String'>
+    readonly processedAt: FieldRef<"EventOutbox", 'DateTime'>
+    readonly createdAt: FieldRef<"EventOutbox", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * EventOutbox findUnique
+   */
+  export type EventOutboxFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+    /**
+     * Filter, which EventOutbox to fetch.
+     */
+    where: EventOutboxWhereUniqueInput
+  }
+
+  /**
+   * EventOutbox findUniqueOrThrow
+   */
+  export type EventOutboxFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+    /**
+     * Filter, which EventOutbox to fetch.
+     */
+    where: EventOutboxWhereUniqueInput
+  }
+
+  /**
+   * EventOutbox findFirst
+   */
+  export type EventOutboxFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+    /**
+     * Filter, which EventOutbox to fetch.
+     */
+    where?: EventOutboxWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EventOutboxes to fetch.
+     */
+    orderBy?: EventOutboxOrderByWithRelationInput | EventOutboxOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EventOutboxes.
+     */
+    cursor?: EventOutboxWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EventOutboxes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EventOutboxes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EventOutboxes.
+     */
+    distinct?: EventOutboxScalarFieldEnum | EventOutboxScalarFieldEnum[]
+  }
+
+  /**
+   * EventOutbox findFirstOrThrow
+   */
+  export type EventOutboxFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+    /**
+     * Filter, which EventOutbox to fetch.
+     */
+    where?: EventOutboxWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EventOutboxes to fetch.
+     */
+    orderBy?: EventOutboxOrderByWithRelationInput | EventOutboxOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EventOutboxes.
+     */
+    cursor?: EventOutboxWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EventOutboxes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EventOutboxes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EventOutboxes.
+     */
+    distinct?: EventOutboxScalarFieldEnum | EventOutboxScalarFieldEnum[]
+  }
+
+  /**
+   * EventOutbox findMany
+   */
+  export type EventOutboxFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+    /**
+     * Filter, which EventOutboxes to fetch.
+     */
+    where?: EventOutboxWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EventOutboxes to fetch.
+     */
+    orderBy?: EventOutboxOrderByWithRelationInput | EventOutboxOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing EventOutboxes.
+     */
+    cursor?: EventOutboxWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EventOutboxes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EventOutboxes.
+     */
+    skip?: number
+    distinct?: EventOutboxScalarFieldEnum | EventOutboxScalarFieldEnum[]
+  }
+
+  /**
+   * EventOutbox create
+   */
+  export type EventOutboxCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+    /**
+     * The data needed to create a EventOutbox.
+     */
+    data: XOR<EventOutboxCreateInput, EventOutboxUncheckedCreateInput>
+  }
+
+  /**
+   * EventOutbox createMany
+   */
+  export type EventOutboxCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many EventOutboxes.
+     */
+    data: EventOutboxCreateManyInput | EventOutboxCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EventOutbox createManyAndReturn
+   */
+  export type EventOutboxCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+    /**
+     * The data used to create many EventOutboxes.
+     */
+    data: EventOutboxCreateManyInput | EventOutboxCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EventOutbox update
+   */
+  export type EventOutboxUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+    /**
+     * The data needed to update a EventOutbox.
+     */
+    data: XOR<EventOutboxUpdateInput, EventOutboxUncheckedUpdateInput>
+    /**
+     * Choose, which EventOutbox to update.
+     */
+    where: EventOutboxWhereUniqueInput
+  }
+
+  /**
+   * EventOutbox updateMany
+   */
+  export type EventOutboxUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update EventOutboxes.
+     */
+    data: XOR<EventOutboxUpdateManyMutationInput, EventOutboxUncheckedUpdateManyInput>
+    /**
+     * Filter which EventOutboxes to update
+     */
+    where?: EventOutboxWhereInput
+    /**
+     * Limit how many EventOutboxes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EventOutbox updateManyAndReturn
+   */
+  export type EventOutboxUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+    /**
+     * The data used to update EventOutboxes.
+     */
+    data: XOR<EventOutboxUpdateManyMutationInput, EventOutboxUncheckedUpdateManyInput>
+    /**
+     * Filter which EventOutboxes to update
+     */
+    where?: EventOutboxWhereInput
+    /**
+     * Limit how many EventOutboxes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EventOutbox upsert
+   */
+  export type EventOutboxUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+    /**
+     * The filter to search for the EventOutbox to update in case it exists.
+     */
+    where: EventOutboxWhereUniqueInput
+    /**
+     * In case the EventOutbox found by the `where` argument doesn't exist, create a new EventOutbox with this data.
+     */
+    create: XOR<EventOutboxCreateInput, EventOutboxUncheckedCreateInput>
+    /**
+     * In case the EventOutbox was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<EventOutboxUpdateInput, EventOutboxUncheckedUpdateInput>
+  }
+
+  /**
+   * EventOutbox delete
+   */
+  export type EventOutboxDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+    /**
+     * Filter which EventOutbox to delete.
+     */
+    where: EventOutboxWhereUniqueInput
+  }
+
+  /**
+   * EventOutbox deleteMany
+   */
+  export type EventOutboxDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EventOutboxes to delete
+     */
+    where?: EventOutboxWhereInput
+    /**
+     * Limit how many EventOutboxes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * EventOutbox without action
+   */
+  export type EventOutboxDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventOutbox
+     */
+    select?: EventOutboxSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventOutbox
+     */
+    omit?: EventOutboxOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -27552,6 +28750,22 @@ export namespace Prisma {
   export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
 
 
+  export const EventOutboxScalarFieldEnum: {
+    id: 'id',
+    eventType: 'eventType',
+    channelType: 'channelType',
+    target: 'target',
+    payloadJson: 'payloadJson',
+    status: 'status',
+    retryCount: 'retryCount',
+    errorMessage: 'errorMessage',
+    processedAt: 'processedAt',
+    createdAt: 'createdAt'
+  };
+
+  export type EventOutboxScalarFieldEnum = (typeof EventOutboxScalarFieldEnum)[keyof typeof EventOutboxScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -27798,6 +29012,20 @@ export namespace Prisma {
    * Reference to a field of type 'NotificationType[]'
    */
   export type ListEnumNotificationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationType[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'OutboxStatus'
+   */
+  export type EnumOutboxStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OutboxStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'OutboxStatus[]'
+   */
+  export type ListEnumOutboxStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OutboxStatus[]'>
     
 
 
@@ -29402,6 +30630,85 @@ export namespace Prisma {
     referenceId?: StringNullableWithAggregatesFilter<"Notification"> | string | null
     isRead?: BoolWithAggregatesFilter<"Notification"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Notification"> | Date | string
+  }
+
+  export type EventOutboxWhereInput = {
+    AND?: EventOutboxWhereInput | EventOutboxWhereInput[]
+    OR?: EventOutboxWhereInput[]
+    NOT?: EventOutboxWhereInput | EventOutboxWhereInput[]
+    id?: StringFilter<"EventOutbox"> | string
+    eventType?: StringFilter<"EventOutbox"> | string
+    channelType?: StringFilter<"EventOutbox"> | string
+    target?: StringFilter<"EventOutbox"> | string
+    payloadJson?: StringFilter<"EventOutbox"> | string
+    status?: EnumOutboxStatusFilter<"EventOutbox"> | $Enums.OutboxStatus
+    retryCount?: IntFilter<"EventOutbox"> | number
+    errorMessage?: StringNullableFilter<"EventOutbox"> | string | null
+    processedAt?: DateTimeNullableFilter<"EventOutbox"> | Date | string | null
+    createdAt?: DateTimeFilter<"EventOutbox"> | Date | string
+  }
+
+  export type EventOutboxOrderByWithRelationInput = {
+    id?: SortOrder
+    eventType?: SortOrder
+    channelType?: SortOrder
+    target?: SortOrder
+    payloadJson?: SortOrder
+    status?: SortOrder
+    retryCount?: SortOrder
+    errorMessage?: SortOrderInput | SortOrder
+    processedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EventOutboxWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: EventOutboxWhereInput | EventOutboxWhereInput[]
+    OR?: EventOutboxWhereInput[]
+    NOT?: EventOutboxWhereInput | EventOutboxWhereInput[]
+    eventType?: StringFilter<"EventOutbox"> | string
+    channelType?: StringFilter<"EventOutbox"> | string
+    target?: StringFilter<"EventOutbox"> | string
+    payloadJson?: StringFilter<"EventOutbox"> | string
+    status?: EnumOutboxStatusFilter<"EventOutbox"> | $Enums.OutboxStatus
+    retryCount?: IntFilter<"EventOutbox"> | number
+    errorMessage?: StringNullableFilter<"EventOutbox"> | string | null
+    processedAt?: DateTimeNullableFilter<"EventOutbox"> | Date | string | null
+    createdAt?: DateTimeFilter<"EventOutbox"> | Date | string
+  }, "id">
+
+  export type EventOutboxOrderByWithAggregationInput = {
+    id?: SortOrder
+    eventType?: SortOrder
+    channelType?: SortOrder
+    target?: SortOrder
+    payloadJson?: SortOrder
+    status?: SortOrder
+    retryCount?: SortOrder
+    errorMessage?: SortOrderInput | SortOrder
+    processedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: EventOutboxCountOrderByAggregateInput
+    _avg?: EventOutboxAvgOrderByAggregateInput
+    _max?: EventOutboxMaxOrderByAggregateInput
+    _min?: EventOutboxMinOrderByAggregateInput
+    _sum?: EventOutboxSumOrderByAggregateInput
+  }
+
+  export type EventOutboxScalarWhereWithAggregatesInput = {
+    AND?: EventOutboxScalarWhereWithAggregatesInput | EventOutboxScalarWhereWithAggregatesInput[]
+    OR?: EventOutboxScalarWhereWithAggregatesInput[]
+    NOT?: EventOutboxScalarWhereWithAggregatesInput | EventOutboxScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"EventOutbox"> | string
+    eventType?: StringWithAggregatesFilter<"EventOutbox"> | string
+    channelType?: StringWithAggregatesFilter<"EventOutbox"> | string
+    target?: StringWithAggregatesFilter<"EventOutbox"> | string
+    payloadJson?: StringWithAggregatesFilter<"EventOutbox"> | string
+    status?: EnumOutboxStatusWithAggregatesFilter<"EventOutbox"> | $Enums.OutboxStatus
+    retryCount?: IntWithAggregatesFilter<"EventOutbox"> | number
+    errorMessage?: StringNullableWithAggregatesFilter<"EventOutbox"> | string | null
+    processedAt?: DateTimeNullableWithAggregatesFilter<"EventOutbox"> | Date | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"EventOutbox"> | Date | string
   }
 
   export type UserCreateInput = {
@@ -31086,6 +32393,97 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type EventOutboxCreateInput = {
+    id?: string
+    eventType: string
+    channelType: string
+    target: string
+    payloadJson: string
+    status?: $Enums.OutboxStatus
+    retryCount?: number
+    errorMessage?: string | null
+    processedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type EventOutboxUncheckedCreateInput = {
+    id?: string
+    eventType: string
+    channelType: string
+    target: string
+    payloadJson: string
+    status?: $Enums.OutboxStatus
+    retryCount?: number
+    errorMessage?: string | null
+    processedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type EventOutboxUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventType?: StringFieldUpdateOperationsInput | string
+    channelType?: StringFieldUpdateOperationsInput | string
+    target?: StringFieldUpdateOperationsInput | string
+    payloadJson?: StringFieldUpdateOperationsInput | string
+    status?: EnumOutboxStatusFieldUpdateOperationsInput | $Enums.OutboxStatus
+    retryCount?: IntFieldUpdateOperationsInput | number
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EventOutboxUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventType?: StringFieldUpdateOperationsInput | string
+    channelType?: StringFieldUpdateOperationsInput | string
+    target?: StringFieldUpdateOperationsInput | string
+    payloadJson?: StringFieldUpdateOperationsInput | string
+    status?: EnumOutboxStatusFieldUpdateOperationsInput | $Enums.OutboxStatus
+    retryCount?: IntFieldUpdateOperationsInput | number
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EventOutboxCreateManyInput = {
+    id?: string
+    eventType: string
+    channelType: string
+    target: string
+    payloadJson: string
+    status?: $Enums.OutboxStatus
+    retryCount?: number
+    errorMessage?: string | null
+    processedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type EventOutboxUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventType?: StringFieldUpdateOperationsInput | string
+    channelType?: StringFieldUpdateOperationsInput | string
+    target?: StringFieldUpdateOperationsInput | string
+    payloadJson?: StringFieldUpdateOperationsInput | string
+    status?: EnumOutboxStatusFieldUpdateOperationsInput | $Enums.OutboxStatus
+    retryCount?: IntFieldUpdateOperationsInput | number
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EventOutboxUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventType?: StringFieldUpdateOperationsInput | string
+    channelType?: StringFieldUpdateOperationsInput | string
+    target?: StringFieldUpdateOperationsInput | string
+    payloadJson?: StringFieldUpdateOperationsInput | string
+    status?: EnumOutboxStatusFieldUpdateOperationsInput | $Enums.OutboxStatus
+    retryCount?: IntFieldUpdateOperationsInput | number
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -32472,6 +33870,70 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumNotificationTypeFilter<$PrismaModel>
     _max?: NestedEnumNotificationTypeFilter<$PrismaModel>
+  }
+
+  export type EnumOutboxStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.OutboxStatus | EnumOutboxStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.OutboxStatus[] | ListEnumOutboxStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OutboxStatus[] | ListEnumOutboxStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumOutboxStatusFilter<$PrismaModel> | $Enums.OutboxStatus
+  }
+
+  export type EventOutboxCountOrderByAggregateInput = {
+    id?: SortOrder
+    eventType?: SortOrder
+    channelType?: SortOrder
+    target?: SortOrder
+    payloadJson?: SortOrder
+    status?: SortOrder
+    retryCount?: SortOrder
+    errorMessage?: SortOrder
+    processedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EventOutboxAvgOrderByAggregateInput = {
+    retryCount?: SortOrder
+  }
+
+  export type EventOutboxMaxOrderByAggregateInput = {
+    id?: SortOrder
+    eventType?: SortOrder
+    channelType?: SortOrder
+    target?: SortOrder
+    payloadJson?: SortOrder
+    status?: SortOrder
+    retryCount?: SortOrder
+    errorMessage?: SortOrder
+    processedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EventOutboxMinOrderByAggregateInput = {
+    id?: SortOrder
+    eventType?: SortOrder
+    channelType?: SortOrder
+    target?: SortOrder
+    payloadJson?: SortOrder
+    status?: SortOrder
+    retryCount?: SortOrder
+    errorMessage?: SortOrder
+    processedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EventOutboxSumOrderByAggregateInput = {
+    retryCount?: SortOrder
+  }
+
+  export type EnumOutboxStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.OutboxStatus | EnumOutboxStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.OutboxStatus[] | ListEnumOutboxStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OutboxStatus[] | ListEnumOutboxStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumOutboxStatusWithAggregatesFilter<$PrismaModel> | $Enums.OutboxStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumOutboxStatusFilter<$PrismaModel>
+    _max?: NestedEnumOutboxStatusFilter<$PrismaModel>
   }
 
   export type ChildProfileCreateNestedOneWithoutUserInput = {
@@ -34262,6 +35724,10 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutNotificationsInput, UserUpdateWithoutNotificationsInput>, UserUncheckedUpdateWithoutNotificationsInput>
   }
 
+  export type EnumOutboxStatusFieldUpdateOperationsInput = {
+    set?: $Enums.OutboxStatus
+  }
+
   export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -34671,6 +36137,23 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumNotificationTypeFilter<$PrismaModel>
     _max?: NestedEnumNotificationTypeFilter<$PrismaModel>
+  }
+
+  export type NestedEnumOutboxStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.OutboxStatus | EnumOutboxStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.OutboxStatus[] | ListEnumOutboxStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OutboxStatus[] | ListEnumOutboxStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumOutboxStatusFilter<$PrismaModel> | $Enums.OutboxStatus
+  }
+
+  export type NestedEnumOutboxStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.OutboxStatus | EnumOutboxStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.OutboxStatus[] | ListEnumOutboxStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OutboxStatus[] | ListEnumOutboxStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumOutboxStatusWithAggregatesFilter<$PrismaModel> | $Enums.OutboxStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumOutboxStatusFilter<$PrismaModel>
+    _max?: NestedEnumOutboxStatusFilter<$PrismaModel>
   }
 
   export type ChildProfileCreateWithoutUserInput = {

@@ -24,6 +24,7 @@ import { moderationRouter } from './modules/moderation/index.js';
 import { reportsRouter } from './modules/reports/index.js';
 import { notificationsRouter } from './modules/notifications/index.js';
 import { adminRouter } from './modules/admin/index.js';
+import { realtimeRouter } from './modules/realtime/index.js';
 
 export function createApp() {
   const app = express();
@@ -88,6 +89,7 @@ export function createApp() {
   app.use(`${config.apiPrefix}/reports`, reportsRouter);
   app.use(`${config.apiPrefix}/notifications`, notificationsRouter);
   app.use(`${config.apiPrefix}/admin`, adminRouter);
+  app.use(`${config.apiPrefix}/realtime`, realtimeRouter);
 
   // Role Gate Verification Tests/Demos
   app.get(`${config.apiPrefix}/test/admin-only`, requireAuth, requireRole(UserRole.ADMIN), (req, res) => {

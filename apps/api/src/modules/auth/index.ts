@@ -107,6 +107,10 @@ authRouter.post(
           req.headers['user-agent']
         );
 
+        // Broadcast updated metrics to online administrators
+        const { AdminMetricsService } = await import('../admin/index.js');
+        AdminMetricsService.broadcastMetrics('USER_REGISTERED');
+
         res.cookie(config.sessionCookieName, session.token, getCookieOptions());
 
         res.status(201).json({
@@ -172,6 +176,10 @@ authRouter.post(
           req.ip,
           req.headers['user-agent']
         );
+
+        // Broadcast updated metrics to online administrators
+        const { AdminMetricsService } = await import('../admin/index.js');
+        AdminMetricsService.broadcastMetrics('USER_REGISTERED');
 
         res.cookie(config.sessionCookieName, session.token, getCookieOptions());
 
@@ -262,6 +270,10 @@ authRouter.post(
         req.headers['user-agent']
       );
 
+      // Broadcast updated metrics to online administrators
+      const { AdminMetricsService } = await import('../admin/index.js');
+      AdminMetricsService.broadcastMetrics('USER_REGISTERED');
+
       res.cookie(config.sessionCookieName, session.token, getCookieOptions());
 
       res.status(200).json({
@@ -324,6 +336,19 @@ authRouter.get(
   requireAuth,
   async (req: Request, res: Response): Promise<void> => {
     const user = req.user!;
+
+    // Include up-to-date parentControls if user is a CHILD
+    let childProfileWithControls: any = user.childProfile;
+    if (user.role === UserRole.CHILD && user.childProfile) {
+      const controls = await prisma.parentControl.findUnique({
+        where: { childProfileId: user.childProfile.id },
+      });
+      childProfileWithControls = {
+        ...user.childProfile,
+        parentControls: controls,
+      };
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -334,7 +359,7 @@ authRouter.get(
         ageGroup: user.ageGroup,
         email: user.email,
         avatarUrl: user.avatarUrl,
-        childProfile: user.childProfile,
+        childProfile: childProfileWithControls,
         parentProfile: user.parentProfile,
       },
       error: null,

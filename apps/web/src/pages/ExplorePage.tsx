@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/api';
 import { Compass, Search, Sparkles } from 'lucide-react';
 import { LikeButton } from '../components/LikeButton';
 import { CommentSection } from '../components/CommentSection';
 import { useAuth } from '../context/AuthContext';
+import { useRealtime } from '../context/RealtimeContext';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const ExplorePage: React.FC = () => {
-  const { ageGroup } = useAuth();
+  const { ageGroup, isAuthenticated } = useAuth();
+  const { on } = useRealtime();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'ALL' | 'POST' | 'REEL'>('ALL');
 
@@ -19,7 +23,20 @@ export const ExplorePage: React.FC = () => {
       const res = await apiClient.get(`/feed${typeParam}`);
       return res.data;
     },
+    enabled: isAuthenticated,
   });
+
+  // Real-time listener for feed updates
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const unsubscribe = on(RealtimeEvent.FEED_UPDATED, (payload) => {
+      console.log('[Explore] Real-time feed update received:', payload);
+      queryClient.invalidateQueries({ queryKey: ['explore-feed', ageGroup] });
+    });
+
+    return unsubscribe;
+  }, [on, isAuthenticated, ageGroup, queryClient]);
 
   const allItems = feedData?.data || [];
   const filtered = allItems.filter((item: any) => {

@@ -3,7 +3,7 @@ import { createApp } from './app.js';
 import { config } from './config/index.js';
 import { bootstrapAdmin } from './config/bootstrap.js';
 import { SessionService } from './modules/auth/session.service.js';
-import { RealtimeServer } from './modules/realtime/index.js';
+import { RealtimeServer, OutboxService } from './modules/realtime/index.js';
 import { prisma } from './prisma.js';
 
 const app = createApp();
@@ -12,6 +12,9 @@ const server = http.createServer(app);
 // Initialize Realtime Server with Socket.IO
 const realtimeServer = RealtimeServer.getInstance();
 realtimeServer.initialize(server);
+
+// Start Transactional Outbox Delivery Worker
+OutboxService.startWorker(1000);
 
 // Bootstrap admin account & initiate scheduled cleanup
 bootstrapAdmin().catch(console.error);
@@ -31,6 +34,7 @@ server.listen(config.port, () => {
 function handleGracefulShutdown(signal: string) {
   console.log(`\n[Fizzy API] Received ${signal}. Starting graceful shutdown...`);
   clearInterval(sessionCleanupInterval);
+  OutboxService.stopWorker();
 
   realtimeServer.close().then(() => {
     server.close(async () => {

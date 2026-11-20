@@ -3,6 +3,7 @@ import { prisma } from '../../prisma.js';
 import { requireAuth } from '../../middleware/auth.js';
 
 export const notificationsRouter = Router();
+export * from './notification.service.js';
 
 notificationsRouter.get('/status', (_req: Request, res: Response) => {
   res.json({ success: true, message: 'Notifications module ready' });

@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useRealtime } from '../context/RealtimeContext';
 import { Sparkles, Shield, Eye, AlertCircle, Flag } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/api';
 import { LikeButton } from '../components/LikeButton';
 import { CommentSection } from '../components/CommentSection';
 import { ReportModal } from '../components/ReportModal';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const FeedPage: React.FC = () => {
   const { user, ageGroup, isAuthenticated } = useAuth();
+  const { on } = useRealtime();
+  const queryClient = useQueryClient();
   const [reportingContentId, setReportingContentId] = useState<string | null>(null);
 
   const { data: feedData, isLoading, error } = useQuery({
@@ -19,6 +23,20 @@ export const FeedPage: React.FC = () => {
     },
     enabled: isAuthenticated,
   });
+
+  // Listen for real-time feed updates targeted at user's age group
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const unsubscribe = on(RealtimeEvent.FEED_UPDATED, (payload) => {
+      console.log('[Feed] Real-time feed update received:', payload);
+      // Invalidate and refetch feed query to display new approved content without refresh
+      // TanStack Query ensures deduplication and preserves current scroll/pagination state
+      queryClient.invalidateQueries({ queryKey: ['feed', ageGroup] });
+    });
+
+    return unsubscribe;
+  }, [on, isAuthenticated, ageGroup, queryClient]);
 
   return (
     <div className="space-y-6">

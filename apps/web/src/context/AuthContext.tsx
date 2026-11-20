@@ -2,10 +2,26 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserRole, AgeGroup, UserSummary } from '@fizzy/shared-types';
 import { apiClient } from '../services/api';
 
+export interface ChildSafetyControls {
+  isPaused?: boolean;
+  pauseReason?: string | null;
+  canComment?: boolean;
+  canAddFriends?: boolean;
+  canReceiveFriendRequests?: boolean;
+  requireParentApprovalForFriends?: boolean;
+  canCreateContent?: boolean;
+  canWatchShortsReels?: boolean;
+  dailyLimitMinutes?: number;
+  bedtimeStartHour?: number | null;
+  bedtimeEndHour?: number | null;
+}
+
 interface AuthContextType {
   user: UserSummary | null;
   role: UserRole | null;
   ageGroup: AgeGroup | null;
+  safetyControls: ChildSafetyControls | null;
+  updateSafetyControls: (newControls: Partial<ChildSafetyControls>) => void;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (userData: UserSummary) => void;
@@ -17,18 +33,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserSummary | null>(null);
+  const [safetyControls, setSafetyControls] = useState<ChildSafetyControls | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = async () => {
     try {
       const res = await apiClient.get('/auth/me');
       if (res.data?.success && res.data?.data) {
-        setUser(res.data.data);
+        const u = res.data.data;
+        setUser(u);
+        if (u.childProfile?.parentControls) {
+          setSafetyControls(u.childProfile.parentControls);
+        } else if (u.childProfile?.id) {
+          // Fallback fetch if not embedded
+          setSafetyControls(null);
+        }
       } else {
         setUser(null);
+        setSafetyControls(null);
       }
     } catch {
       setUser(null);
+      setSafetyControls(null);
     } finally {
       setIsLoading(false);
     }
@@ -40,6 +66,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = (userData: UserSummary) => {
     setUser(userData);
+    if ((userData as any).childProfile?.parentControls) {
+      setSafetyControls((userData as any).childProfile.parentControls);
+    }
+  };
+
+  const updateSafetyControls = (newControls: Partial<ChildSafetyControls>) => {
+    setSafetyControls((prev) => ({
+      ...(prev || {}),
+      ...newControls,
+    }));
   };
 
   const logout = async () => {
@@ -49,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Logout error:', e);
     } finally {
       setUser(null);
+      setSafetyControls(null);
     }
   };
 
@@ -61,6 +98,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         role,
         ageGroup,
+        safetyControls,
+        updateSafetyControls,
         isAuthenticated: !!user,
         isLoading,
         login,

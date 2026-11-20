@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/api';
 import {
@@ -9,9 +9,12 @@ import {
   Activity,
   Layers,
 } from 'lucide-react';
+import { useRealtime } from '../context/RealtimeContext';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const ModerationPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { on } = useRealtime();
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'queue' | 'reports' | 'audit'>('queue');
@@ -29,6 +32,29 @@ export const ModerationPage: React.FC = () => {
   // Report Resolution State
   const [resolvingReport, setResolvingReport] = useState<any | null>(null);
   const [reportActionTaken, setReportActionTaken] = useState('');
+
+  // Real-time synchronization for Admin Dashboard, Moderation Queue, and Reports
+  useEffect(() => {
+    const unsubQueue = on(RealtimeEvent.MODERATION_QUEUE_UPDATED, () => {
+      queryClient.invalidateQueries({ queryKey: ['moderation-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+    });
+
+    const unsubMetrics = on(RealtimeEvent.ADMIN_METRICS_UPDATED, () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+    });
+
+    const unsubReport = on(RealtimeEvent.REPORT_CREATED, () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+    });
+
+    return () => {
+      unsubQueue();
+      unsubMetrics();
+      unsubReport();
+    };
+  }, [on, queryClient]);
 
   // 1. Fetch Admin Metrics (Live DB counts)
   const { data: dashboardData } = useQuery({
@@ -81,11 +107,11 @@ export const ModerationPage: React.FC = () => {
       internalNotes,
       approvedAudiences,
     }: any) => {
-      const res = await apiClient.post(`/moderation/${contentId}/review`, {
+      const res = await apiClient.post(`/moderation/decision/${contentId}`, {
         decision,
         reason,
         internalNotes,
-        approvedAudiences: approvedAudiences.length > 0 ? approvedAudiences : undefined,
+        approvedAudiences: approvedAudiences && approvedAudiences.length > 0 ? approvedAudiences : undefined,
       });
       return res.data;
     },
@@ -274,7 +300,9 @@ export const ModerationPage: React.FC = () => {
                       </span>
                     </div>
                     <span className="text-xs text-slate-400">
-                      {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {item.submittedAt || item.createdAt
+                        ? new Date(item.submittedAt || item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : ''}
                     </span>
                   </div>
 
@@ -428,10 +456,20 @@ export const ModerationPage: React.FC = () => {
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl space-y-1">
+              <div className="p-3 bg-slate-50 rounded-xl space-y-2">
                 <div>Creator: <strong>@{reviewItem.author?.username}</strong> ({reviewItem.author?.ageGroup} Tier)</div>
                 <div>Type: <strong className="font-mono">{reviewItem.type}</strong></div>
                 <div>Caption: <em>"{reviewItem.caption || reviewItem.title || 'None'}"</em></div>
+
+                {reviewItem.mediaAssets?.[0]?.url && (
+                  <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 bg-black flex items-center justify-center max-h-56">
+                    <img
+                      src={reviewItem.mediaAssets[0].url}
+                      alt="Inspection preview"
+                      className="max-h-56 w-auto object-contain"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Audience selection for Shorts and Reels */}

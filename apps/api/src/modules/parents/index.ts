@@ -13,6 +13,7 @@ import {
 import { UserRole, ParentLinkStatus, NotificationType } from '../../generated/prisma-client/index.js';
 import { RealtimeServer } from '../realtime/index.js';
 import { RealtimeEvent } from '@fizzy/shared-types';
+import { NotificationService } from '../notifications/index.js';
 
 export const parentsRouter = Router();
 
@@ -359,14 +360,21 @@ parentsRouter.post(
       });
 
       // Send confirmation notification to parent
-      await prisma.notification.create({
-        data: {
-          userId: user.id,
-          type: NotificationType.PARENT_ALERT,
-          title: 'Child Linked Successfully',
-          message: `You are now verified as a parent/guardian for @${childUser.username}.`,
-          referenceId: link.id,
-        },
+      await NotificationService.createNotification({
+        userId: user.id,
+        type: NotificationType.PARENT_ALERT,
+        title: 'Child Linked Successfully',
+        message: `You are now verified as a parent/guardian for @${childUser.username}.`,
+        referenceId: link.id,
+      });
+
+      // Also notify child that a parent account was linked
+      await NotificationService.createNotification({
+        userId: childUser.id,
+        type: NotificationType.PARENT_ALERT,
+        title: 'Parent Connected',
+        message: `${user.displayName} has been linked as your parent/guardian.`,
+        referenceId: link.id,
       });
 
       res.status(201).json({
@@ -721,16 +729,18 @@ parentsRouter.patch(
 
         // If pausing or updating, also notify child or parent as appropriate
         if (updateData.isPaused !== undefined) {
-          await tx.notification.create({
-            data: {
+          await NotificationService.createNotification(
+            {
               userId: link.child.user.id,
               type: NotificationType.PARENT_ALERT,
               title: updateData.isPaused ? 'Account Paused by Parent' : 'Account Resumed by Parent',
               message: updateData.isPaused
                 ? `Your parent paused account interactions: ${updateData.pauseReason || 'Break time'}`
                 : 'Your parent has resumed your account access.',
+              referenceId: link.id,
             },
-          });
+            tx
+          );
         }
 
         return controls;
@@ -738,25 +748,27 @@ parentsRouter.patch(
 
       // Emit Real-time Notification to Child & Family Room
       const realtime = RealtimeServer.getInstance();
+      const settingsPayload = {
+        isPaused: updatedControls.isPaused,
+        pauseReason: updatedControls.pauseReason,
+        canComment: updatedControls.canComment,
+        canAddFriends: updatedControls.canAddFriends,
+        canReceiveFriendRequests: updatedControls.canReceiveFriendRequests,
+        requireParentApprovalForFriends: updatedControls.requireParentApprovalForFriends,
+        canCreateContent: updatedControls.canCreateContent,
+        canWatchShortsReels: updatedControls.canWatchShortsReels,
+        dailyLimitMinutes: updatedControls.dailyLimitMinutes,
+        bedtimeStartHour: updatedControls.bedtimeStartHour,
+        bedtimeEndHour: updatedControls.bedtimeEndHour,
+      };
+
       realtime.emitToUser(link.child.user.id, RealtimeEvent.PARENT_CONTROL_UPDATED, {
         childId: link.child.user.id,
-        settings: {
-          isPaused: updatedControls.isPaused,
-          canComment: updatedControls.canComment,
-          canAddFriends: updatedControls.canAddFriends,
-          canWatchShortsReels: updatedControls.canWatchShortsReels,
-          dailyLimitMinutes: updatedControls.dailyLimitMinutes,
-        },
+        settings: settingsPayload,
       });
       realtime.emitToFamily(user.id, link.child.user.id, RealtimeEvent.PARENT_CONTROL_UPDATED, {
         childId: link.child.user.id,
-        settings: {
-          isPaused: updatedControls.isPaused,
-          canComment: updatedControls.canComment,
-          canAddFriends: updatedControls.canAddFriends,
-          canWatchShortsReels: updatedControls.canWatchShortsReels,
-          dailyLimitMinutes: updatedControls.dailyLimitMinutes,
-        },
+        settings: settingsPayload,
       });
 
       res.status(200).json({

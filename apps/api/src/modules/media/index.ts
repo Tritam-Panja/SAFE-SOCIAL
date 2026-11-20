@@ -286,6 +286,66 @@ mediaRouter.post(
 );
 
 /**
+ * GET /api/v1/media/preview
+ * Protected preview streaming endpoint for local development adapter.
+ * Accessible only to authorized admin or media owner.
+ */
+mediaRouter.get(
+  '/preview',
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user!;
+      const storageKey = req.query.key as string;
+
+      if (!storageKey) {
+        res.status(400).send('Missing key parameter');
+        return;
+      }
+
+      // Check access permission: key must match user or user is admin
+      if (!storageKey.includes(user.id) && user.role !== UserRole.ADMIN) {
+        res.status(403).send('Forbidden: Quarantined media cannot be viewed.');
+        return;
+      }
+
+      const storage = getStorageProvider();
+      const file = await storage.getObject(storageKey);
+
+      res.setHeader('Content-Type', file.mimeType);
+      res.setHeader('Content-Length', file.sizeBytes);
+      res.send(file.buffer);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/v1/media/approved/*
+ * Public / CDN delivery endpoint for approved media in local development adapter.
+ */
+mediaRouter.get(
+  '/approved/*',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const subPath = req.params[0] || (req.params as any)['0'] || req.url.replace(/^\/approved\/?/, '');
+      const storageKey = `approved/${subPath.replace(/^approved[/\\]+/, '')}`;
+
+      const storage = getStorageProvider();
+      const file = await storage.getObject(storageKey);
+
+      res.setHeader('Content-Type', file.mimeType);
+      res.setHeader('Content-Length', file.sizeBytes);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(file.buffer);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
  * GET /api/v1/media/:id
  * Retrieve MediaAsset metadata. If quarantined, only creator or admin can retrieve signed preview URL.
  */
@@ -347,42 +407,6 @@ mediaRouter.get(
         },
         error: null,
       });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-/**
- * GET /api/v1/media/preview
- * Protected preview streaming endpoint for local development adapter.
- * Accessible only to authorized admin or media owner.
- */
-mediaRouter.get(
-  '/preview',
-  requireAuth,
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const user = req.user!;
-      const storageKey = req.query.key as string;
-
-      if (!storageKey) {
-        res.status(400).send('Missing key parameter');
-        return;
-      }
-
-      // Check access permission: key must match user or user is admin
-      if (!storageKey.includes(user.id) && user.role !== UserRole.ADMIN) {
-        res.status(403).send('Forbidden: Quarantined media cannot be viewed.');
-        return;
-      }
-
-      const storage = getStorageProvider();
-      const file = await storage.getObject(storageKey);
-
-      res.setHeader('Content-Type', file.mimeType);
-      res.setHeader('Content-Length', file.sizeBytes);
-      res.send(file.buffer);
     } catch (error) {
       next(error);
     }

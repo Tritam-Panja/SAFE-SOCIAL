@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../services/api';
 import { Bell, CheckCheck, Sparkles, Clock } from 'lucide-react';
+import { useRealtime } from '../context/RealtimeContext';
+import { RealtimeEvent } from '@fizzy/shared-types';
 
 export const NotificationsPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { on } = useRealtime();
 
   // 1. Fetch user's notifications
   const { data: notifData, isLoading } = useQuery({
@@ -14,6 +19,16 @@ export const NotificationsPage: React.FC = () => {
       return res.data;
     },
   });
+
+  // Listen for live incoming notifications
+  useEffect(() => {
+    const unsubscribe = on(RealtimeEvent.NOTIFICATION_CREATED, (payload) => {
+      console.log('[Notifications] Received live notification:', payload);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    });
+
+    return unsubscribe;
+  }, [on, queryClient]);
 
   // 2. Mark single notification as read
   const markReadMutation = useMutation({
@@ -36,6 +51,21 @@ export const NotificationsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
+
+  const handleNotificationClick = (n: any) => {
+    if (!n.isRead) {
+      markReadMutation.mutate(n.id);
+    }
+
+    // Contextual navigation to related entity
+    if (n.type === 'FRIEND_REQUEST' || n.type === 'FRIEND_ACCEPTED') {
+      navigate('/friends');
+    } else if (n.type === 'PARENT_ALERT' || n.type === 'PARENT_CONSENT_REQUEST') {
+      navigate('/parent');
+    } else if (n.type === 'CONTENT_APPROVED' || n.type === 'CONTENT_REJECTED') {
+      navigate('/submissions');
+    }
+  };
 
   const notifications = notifData?.data || [];
   const unreadCount = notifData?.meta?.unreadCount || 0;
@@ -82,13 +112,11 @@ export const NotificationsPage: React.FC = () => {
           {notifications.map((n: any) => (
             <div
               key={n.id}
-              onClick={() => {
-                if (!n.isRead) markReadMutation.mutate(n.id);
-              }}
+              onClick={() => handleNotificationClick(n)}
               className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
                 n.isRead
-                  ? 'bg-white border-slate-200 text-slate-700'
-                  : 'bg-purple-50/50 border-purple-200 text-purple-950 shadow-xs'
+                  ? 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                  : 'bg-purple-50/50 border-purple-200 text-purple-950 shadow-xs hover:border-purple-300'
               }`}
             >
               <div className="flex items-start gap-3">
