@@ -28,6 +28,11 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Build Shared Packages
+        run: |
+          pnpm --filter @fizzy/shared-types run build
+          pnpm --filter @fizzy/validation run build
+
       - name: Build Web Application
         run: pnpm --filter @fizzy/web run build
         env:
@@ -67,11 +72,13 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
+
+      - name: Build Shared Packages
+        run: |
+          pnpm --filter @fizzy/shared-types run build
+          pnpm --filter @fizzy/validation run build
 
       - name: Build Web Application
         run: pnpm --filter @fizzy/web run build
