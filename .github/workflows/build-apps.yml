@@ -86,7 +86,8 @@ jobs:
           VITE_API_URL: ${{ secrets.PROD_API_URL || 'https://api.fizzykids.safe/api/v1' }}
 
       - name: Sync Capacitor to Native Android Project
-        run: pnpm cap:sync
+        run: pnpm exec cap sync android
+        working-directory: apps/web
 
       - name: Make Gradle Wrapper Executable
         run: chmod +x apps/web/android/gradlew
