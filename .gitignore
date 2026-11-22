@@ -11,3 +11,7 @@ coverage/
 playwright-report/
 test-results/
 *.tsbuildinfo
+dist-electron/
+apps/web/android/app/build/
+apps/web/android/.gradle/
+

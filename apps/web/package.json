@@ -11,6 +11,8 @@
     "lint": "echo \"@fizzy/web linted\""
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
     "@fizzy/shared-types": "workspace:*",
     "@fizzy/validation": "workspace:*",
     "@tanstack/react-query": "^5.62.7",
