@@ -19,13 +19,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@v1
         with:
-          node-version: 20
-
-      - name: Install pnpm
-        run: npm install -g pnpm@12.21.0
+          version: 12.21.0
+          runtime: node@20
 
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
@@ -57,13 +55,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@v1
         with:
-          node-version: 20
-
-      - name: Install pnpm
-        run: npm install -g pnpm@12.21.0
+          version: 12.21.0
+          runtime: node@20
 
       - name: Set up Java JDK (17)
         uses: actions/setup-java@v4
