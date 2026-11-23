@@ -41,7 +41,7 @@ export const RegisterPage: React.FC = () => {
       const res = await apiClient.post('/auth/register', payload);
 
       if (res.data?.success && res.data?.data) {
-        login(res.data.data.user);
+        login(res.data.data.user, res.data.data.session?.token);
         navigate('/');
       }
     } catch (err: any) {

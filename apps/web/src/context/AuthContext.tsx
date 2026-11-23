@@ -24,7 +24,7 @@ interface AuthContextType {
   updateSafetyControls: (newControls: Partial<ChildSafetyControls>) => void;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (userData: UserSummary) => void;
+  login: (userData: UserSummary, token?: string) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -64,8 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, []);
 
-  const login = (userData: UserSummary) => {
+  const login = (userData: UserSummary, token?: string) => {
     setUser(userData);
+    if (token) {
+      localStorage.setItem('fizzy_session_token', token);
+    }
     if ((userData as any).childProfile?.parentControls) {
       setSafetyControls((userData as any).childProfile.parentControls);
     }
@@ -84,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Logout error:', e);
     } finally {
+      localStorage.removeItem('fizzy_session_token');
       setUser(null);
       setSafetyControls(null);
     }

@@ -24,7 +24,7 @@ export const LoginPage: React.FC = () => {
       });
 
       if (res.data?.success && res.data?.data) {
-        login(res.data.data.user);
+        login(res.data.data.user, res.data.data.session?.token);
         navigate('/');
       }
     } catch (err: any) {
