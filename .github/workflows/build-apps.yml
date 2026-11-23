@@ -108,9 +108,59 @@ jobs:
         working-directory: apps/web/android
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
+      - name: Rename APK for Release
+        run: |
+          cp apps/web/android/app/build/outputs/apk/debug/app-debug.apk ./Fizzy-Android.apk
+
       - name: Upload Android APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: fizzy-android-apk
-          path: apps/web/android/app/build/outputs/apk/debug/*.apk
+          path: Fizzy-Android.apk
           if-no-files-found: error
+
+  # ============================================================================
+  # 3. PUBLISH GITHUB RELEASE (DIRECT DOWNLOAD FOR ANY PHONE OR PC)
+  # ============================================================================
+  publish-release:
+    name: Publish Public GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-windows-exe, build-android-apk]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Windows Installer
+        uses: actions/download-artifact@v4
+        with:
+          name: fizzy-windows-installer
+          path: release-assets
+
+      - name: Download Android APK
+        uses: actions/download-artifact@v4
+        with:
+          name: fizzy-android-apk
+          path: release-assets
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Fizzy Downloadable Apps (Latest)"
+          body: |
+            ### 🚀 Fizzy Latest Downloads
+
+            Download and install Fizzy directly on your devices:
+
+            - 📱 **Android Phone App (.apk):** [Download Fizzy-Android.apk](https://github.com/Tritam-Panja/SAFE-SOCIAL/releases/download/latest/Fizzy-Android.apk)
+            - 💻 **Windows Desktop (.exe):** Download the `.exe` installer below.
+
+            *On Android: Open the downloaded APK file and tap "Install" (allow "Unknown sources" or "Install unknown apps" if prompted).*
+          files: |
+            release-assets/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
