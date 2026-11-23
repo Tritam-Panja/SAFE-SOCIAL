@@ -43,7 +43,7 @@ jobs:
       - name: Build Web Application
         run: pnpm --filter @fizzy/web run build
         env:
-          VITE_API_URL: ${{ secrets.PROD_API_URL || 'https://api.fizzykids.safe/api/v1' }}
+          VITE_API_URL: ${{ secrets.PROD_API_URL || 'https://optimization-floral-planners-serves.trycloudflare.com/api/v1' }}
 
       - name: Build Electron Installer (.exe)
         run: pnpm exec electron-builder --win nsis --publish never
@@ -94,7 +94,7 @@ jobs:
       - name: Build Web Application
         run: pnpm --filter @fizzy/web run build
         env:
-          VITE_API_URL: ${{ secrets.PROD_API_URL || 'https://api.fizzykids.safe/api/v1' }}
+          VITE_API_URL: ${{ secrets.PROD_API_URL || 'https://optimization-floral-planners-serves.trycloudflare.com/api/v1' }}
 
       - name: Sync Capacitor to Native Android Project
         run: |
