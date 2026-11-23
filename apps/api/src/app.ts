@@ -37,7 +37,15 @@ export function createApp() {
   // CORS Configuration
   app.use(
     cors({
-      origin: [config.clientOrigin, 'http://localhost:5173', 'http://localhost:3000'],
+      origin: (origin, callback) => {
+        // Allow mobile apps (Capacitor sends origin 'https://localhost' or null), desktop apps, or browser clients
+        if (!origin || origin.startsWith('http://localhost') || origin.startsWith('https://localhost') || origin === 'capacitor://localhost' || origin === config.clientOrigin) {
+          callback(null, true);
+        } else {
+          // Allow Cloudflare and remote domains in development/tunnel mode
+          callback(null, true);
+        }
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
